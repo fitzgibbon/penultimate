@@ -16,6 +16,12 @@ initMockState = MkMockState "" []
 
 export
 TerminalBackend (StateT MockState IO) where
+  clearScreen = modify (\st => { output := st.output ++ "<CLEAR>" } st)
+  hideCursor = modify (\st => { output := st.output ++ "<HIDECURSOR>" } st)
+  showCursor = modify (\st => { output := st.output ++ "<SHOWCURSOR>" } st)
+  moveCursor r c = modify (\st => { output := st.output ++ "<MOVE " ++ show r ++ "," ++ show c ++ ">" } st)
+  applyStyle _ = modify (\st => { output := st.output ++ "<STYLE>" } st)
+  writeChar c = modify (\st => { output := st.output ++ cast c } st)
   writeString s = modify (\st => { output := st.output ++ s } st)
   flush = pure ()
   readChar = do

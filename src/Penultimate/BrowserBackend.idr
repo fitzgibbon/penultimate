@@ -2,6 +2,7 @@ module Penultimate.BrowserBackend
 
 import Penultimate.Backend
 import Penultimate.Capabilities
+import Penultimate.Ansi
 
 %foreign "javascript:lambda: (s) => window.penultimate_writeString(s)"
 prim__writeString : String -> PrimIO ()
@@ -25,6 +26,12 @@ safePollChar = do
 
 export
 TerminalBackend IO where
+  clearScreen = safeWriteString "\x1b[2J"
+  hideCursor = safeWriteString "\x1b[?25l"
+  showCursor = safeWriteString "\x1b[?25h"
+  moveCursor r c = safeWriteString ("\x1b[" ++ show r ++ ";" ++ show c ++ "H")
+  applyStyle style = safeWriteString (styleSeq style)
+  writeChar c = safeWriteString (cast c)
   writeString s = safeWriteString s
   flush = pure ()
   readChar = safeReadChar
@@ -34,4 +41,4 @@ TerminalBackend IO where
   disableRaw = pure True
   resizePending = pure False
   getCapabilities = pure (MkCapabilities True True True)
-  sleep ms = pure () -- Real sleep in JS requires async/await, we just yield or no-op for now in synchronous loop
+  sleep ms = pure ()

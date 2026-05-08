@@ -5,6 +5,7 @@ import Penultimate.Capabilities
 import Penultimate.Input
 import Penultimate.Signal
 import Penultimate.Render
+import Penultimate.Ansi
 import System
 import System.File
 import Data.String
@@ -60,6 +61,12 @@ querySize = do
 
 export
 TerminalBackend IO where
+  clearScreen = putStr Penultimate.Ansi.clearScreen
+  hideCursor = putStr Penultimate.Ansi.hideCursor
+  showCursor = putStr Penultimate.Ansi.showCursor
+  moveCursor r c = putStr (Penultimate.Ansi.cursorTo r c)
+  applyStyle style = putStr (styleSeq style)
+  writeChar c = putStr (singleton c)
   writeString s = putStr s
   flush = fflush stdout
   readChar = getChar
@@ -71,4 +78,4 @@ TerminalBackend IO where
   disableRaw = Penultimate.Input.disableRaw
   resizePending = Penultimate.Signal.resizePending
   getCapabilities = detectCapabilities
-  sleep ms = safeSleep (ms * 1000)
+  sleep ms = if ms >= 0 then safeSleep (ms * 1000) else pure ()

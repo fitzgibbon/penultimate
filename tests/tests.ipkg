@@ -1,5 +1,5 @@
 package penultimate-tests
-depends = base
+depends = base, penultimate
 sourcedir = "."
 modules = TestHeadless
 executable = "penultimate-tests"

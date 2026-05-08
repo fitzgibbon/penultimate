@@ -54,6 +54,12 @@ getMonotonicTimeMs = do
 
 export
 (TerminalBackend m, HasIO m) => TerminalBackend (RecordingBackendT m) where
+  clearScreen = MkRecording (\_, _ => clearScreen)
+  hideCursor = MkRecording (\_, _ => hideCursor)
+  showCursor = MkRecording (\_, _ => showCursor)
+  moveCursor r c = MkRecording (\_, _ => moveCursor r c)
+  applyStyle style = MkRecording (\_, _ => applyStyle style)
+  writeChar c = MkRecording (\_, _ => writeChar c)
   writeString s = MkRecording (\fH, startT => do
     now <- liftIO getMonotonicTimeMs
     let elapsedMs = now - startT

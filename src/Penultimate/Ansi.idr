@@ -2,6 +2,8 @@ module Penultimate.Ansi
 
 import Penultimate.Attr
 import Penultimate.Color
+import Penultimate.Backend
+import Data.List
 
 esc : String -> String
 esc code = "\x1b[" ++ code
@@ -99,3 +101,27 @@ export
 setBgTrueColor : RGB -> String
 setBgTrueColor (MkRGB r g b) =
   esc ("48;2;" ++ show (channelValue r) ++ ";" ++ show (channelValue g) ++ ";" ++ show (channelValue b) ++ "m")
+
+export
+styleSeq : RenderStyle -> String
+styleSeq style =
+  let attrSeq = concat (map setAttr style.attrsStyle)
+      fgSeq = case style.fgStyle of
+        RGBColor rgb => setFgTrueColor rgb
+        Ansi256Color idx => setFgAnsi256 idx
+        Ansi16Color name => setFgAnsi16 name
+        Named name => setFgAnsi16 name
+        Custom user =>
+          case user.ansi16 of
+            Just name => setFgAnsi16 name
+            Nothing => setFgAnsi16 White
+      bgSeq = case style.bgStyle of
+        RGBColor rgb => setBgTrueColor rgb
+        Ansi256Color idx => setBgAnsi256 idx
+        Ansi16Color name => setBgAnsi16 name
+        Named name => setBgAnsi16 name
+        Custom user =>
+          case user.ansi16 of
+            Just name => setBgAnsi16 name
+            Nothing => setBgAnsi16 Black
+   in resetAttrs ++ attrSeq ++ fgSeq ++ bgSeq

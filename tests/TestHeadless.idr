@@ -9,6 +9,7 @@ import Penultimate.Color
 import Penultimate.Capabilities
 import Penultimate
 import System
+import Data.String
 
 basicRenderTest : StateT MockState IO ()
 basicRenderTest = do
@@ -26,10 +27,11 @@ run = do
   putStrLn "Running headless terminal rendering test..."
   res <- execStateT initMockState basicRenderTest
   let out = res.output
-  if length out > 0
+
+  if isInfixOf "<CLEAR>" out && isInfixOf "<MOVE 1,1>" out && isInfixOf "<STYLE>OK" out
      then do
-       putStrLn "Test passed: Mock backend successfully intercepted rendered ANSI buffers."
-       putStrLn ("Captured " ++ show (length out) ++ " characters of ANSI output.")
+       putStrLn "Test passed: Mock backend successfully intercepted semantic rendering calls."
      else do
-       putStrLn "Test failed: Mock backend captured no output."
+       putStrLn "Test failed: Mock backend trace did not match expected semantic tokens."
+       putStrLn ("Actual trace: " ++ out)
        exitFailure

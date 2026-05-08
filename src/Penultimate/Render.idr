@@ -6,7 +6,6 @@ import Data.List
 import Data.Maybe
 import Data.So
 import Data.Vect
-import Penultimate.Ansi
 import Penultimate.Attr
 import Penultimate.Capabilities
 import Penultimate.Cell
@@ -71,42 +70,8 @@ refreshSizeIfNeeded ctx = do
        pure True
      else pure False
 
-record RenderStyle where
-  constructor MkRenderStyle
-  fgStyle : Color
-  bgStyle : Color
-  attrsStyle : Attrs
-
-export
-Eq RenderStyle where
-  (MkRenderStyle fg1 bg1 attrs1) == (MkRenderStyle fg2 bg2 attrs2) =
-    fg1 == fg2 && bg1 == bg2 && attrs1 == attrs2
-
 styleFromCell : Cell -> RenderStyle
 styleFromCell cell = MkRenderStyle cell.fg cell.bg cell.attrs
-
-styleSeq : RenderStyle -> String
-styleSeq style =
-  let attrSeq = concat (map setAttr style.attrsStyle)
-      fgSeq = case style.fgStyle of
-        RGBColor rgb => setFgTrueColor rgb
-        Ansi256Color idx => setFgAnsi256 idx
-        Ansi16Color name => setFgAnsi16 name
-        Named name => setFgAnsi16 name
-        Custom user =>
-          case user.ansi16 of
-            Just name => setFgAnsi16 name
-            Nothing => setFgAnsi16 White
-      bgSeq = case style.bgStyle of
-        RGBColor rgb => setBgTrueColor rgb
-        Ansi256Color idx => setBgAnsi256 idx
-        Ansi16Color name => setBgAnsi16 name
-        Named name => setBgAnsi16 name
-        Custom user =>
-          case user.ansi16 of
-            Just name => setBgAnsi16 name
-            Nothing => setBgAnsi16 Black
-   in resetAttrs ++ attrSeq ++ fgSeq ++ bgSeq
 
 Changed : Cell -> Maybe Cell -> Type
 Changed cell prev =
@@ -220,9 +185,9 @@ renderStepsForRow row cells prevCells = go 0 cells prevCells
          in Move row col :: Emit runCells :: go (col + len) cellsLeft prevLeft
       emitRun _ [] _ = []
 
-renderRow : Nat -> List Cell -> List Cell -> String
-renderRow row cells prevCells =
-  let 0 _ = coalesceCorrect (renderStepsForRow row cells prevCells) in
+renderRow : TerminalBackend m => Nat -> List Cell -> List Cell -> m ()
+renderRow row cells prevCells = do
+  let 0 _ = coalesceCorrect (renderStepsForRow row cells prevCells)
   go 0 cells prevCells Nothing
   where
     cellsToString : List Cell -> String
@@ -245,31 +210,44 @@ renderRow row cells prevCells =
           else ([], c :: cs, [], 0)
 
     mutual
-      go : Nat -> List Cell -> List Cell -> Maybe RenderStyle -> String
-      go _ [] _ _ = ""
+      go : Nat -> List Cell -> List Cell -> Maybe RenderStyle -> m ()
+      go _ [] _ _ = pure ()
       go col (c :: cs) (p :: ps) currentStyle =
         if c == p
            then go (col + 1) cs ps currentStyle
            else emitRun col (c :: cs) (p :: ps) currentStyle
       go col (c :: cs) [] currentStyle = emitRun col (c :: cs) [] currentStyle
 
-      emitRun : Nat -> List Cell -> List Cell -> Maybe RenderStyle -> String
-      emitRun col (c :: cs) prevs currentStyle =
+      emitRun : Nat -> List Cell -> List Cell -> Maybe RenderStyle -> m ()
+      emitRun col (c :: cs) prevs currentStyle = do
         let style = styleFromCell c
-            (runCells, restCells, restPrev, runLen) = collectRun style (c :: cs) prevs
-            text = cellsToString runCells
-            stylePrefix =
-              case currentStyle of
-                Just current => if current == style then "" else styleSeq style
-                Nothing => styleSeq style
-         in cursorTo (row + 1) (col + 1) ++ stylePrefix ++ text ++
-            go (col + runLen) restCells restPrev (Just style)
-      emitRun _ [] _ currentStyle = go 0 [] [] currentStyle
+        let (runCells, restCells, restPrev, runLen) = collectRun style (c :: cs) prevs
+        let text = cellsToString runCells
 
-renderRows : Nat -> List (List Cell) -> List (List Cell) -> String
-renderRows _ [] _ = ""
-renderRows row (c :: cs) (p :: ps) = renderRow row c p ++ renderRows (row + 1) cs ps
-renderRows row (c :: cs) [] = renderRow row c [] ++ renderRows (row + 1) cs []
+        moveCursor (row + 1) (col + 1)
+        case currentStyle of
+          Just current => if current == style then pure () else applyStyle style
+          Nothing => applyStyle style
+
+        -- Emit semantic chars instead of writeString if we want to trace them clearly
+        -- writeString text
+        let emitChars : List Char -> m ()
+            emitChars [] = pure ()
+            emitChars (x :: xs) = do writeChar x; emitChars xs
+        emitChars (unpack text)
+
+        go (col + runLen) restCells restPrev (Just style)
+
+      emitRun _ [] _ _ = pure ()
+
+renderRows : TerminalBackend m => Nat -> List (List Cell) -> List (List Cell) -> m ()
+renderRows _ [] _ = pure ()
+renderRows row (c :: cs) (p :: ps) = do
+  renderRow row c p
+  renderRows (row + 1) cs ps
+renderRows row (c :: cs) [] = do
+  renderRow row c []
+  renderRows (row + 1) cs []
 
 export
 renderCanvas : TerminalBackend m => HasIO m => RenderContext m -> Canvas -> m ()
@@ -284,16 +262,15 @@ renderCanvas ctx canvas = do
   if resized || sizeChanged
      then do
        liftIO (writeIORef ctx.lastCanvasRef Nothing)
-       writeString clearScreen
-       writeString (cursorTo 1 1)
+       clearScreen
+       moveCursor 1 1
      else pure ()
-  let output = case lastCanvas of
-        Nothing => renderRows 0 resolvedRows []
-        Just prev =>
-          let prevRows = rowsToList prev.rows
-           in if resized || sizeChanged
-                then renderRows 0 resolvedRows []
-                else renderRows 0 resolvedRows prevRows
-  writeString output
+  case lastCanvas of
+    Nothing => renderRows 0 resolvedRows []
+    Just prev =>
+      let prevRows = rowsToList prev.rows
+       in if resized || sizeChanged
+            then renderRows 0 resolvedRows []
+            else renderRows 0 resolvedRows prevRows
   flush
   liftIO (writeIORef ctx.lastCanvasRef (Just resolved))
