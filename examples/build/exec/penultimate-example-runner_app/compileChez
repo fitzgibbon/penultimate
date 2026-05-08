@@ -1,1 +1,0 @@
-(parameterize ([optimize-level 3] [compile-file-message #f]) (compile-program "/app/examples/build/exec/penultimate-example-runner_app/penultimate-example-runner.ss"))
