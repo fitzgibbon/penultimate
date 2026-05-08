@@ -1,19 +1,11 @@
 module Penultimate.Render
 
+import Data.Fin
 import Data.IORef
 import Data.List
 import Data.Maybe
 import Data.So
-import Data.String
 import Data.Vect
-import Decidable.Equality
-import System
-import System.File.Mode
-import System.File.Process
-import System.File.ReadWrite
-import System.File.Virtual
-import System.File.Types
-import PrimIO
 import Penultimate.Ansi
 import Penultimate.Attr
 import Penultimate.Capabilities
@@ -21,127 +13,56 @@ import Penultimate.Cell
 import Penultimate.Color
 import Penultimate.Canvas
 import Penultimate.Signal
+import Penultimate.Backend
+import Decidable.Equality
 
 public export
-record RenderContext where
+record RenderContext (m : Type -> Type) where
   constructor MkRenderContext
-  capabilities : Capabilities
+  caps : Capabilities
   policy : RenderPolicy
   tier : ColorTier
   sizeRef : IORef (Nat, Nat)
   lastCanvasRef : IORef (Maybe Canvas)
 
-%foreign "C:setvbuf,libc 6"
-prim__setvbuf : FilePtr -> AnyPtr -> Int -> Int -> PrimIO Int
-
-bufferModeNone : Int
-bufferModeNone = 2
-
-setStdoutUnbuffered : IO ()
-setStdoutUnbuffered =
-  case stdout of
-    FHandle handle => do
-      _ <- primIO (prim__setvbuf handle prim__getNullAnyPtr bufferModeNone 0)
-      pure ()
-
-blendRGB : RGB -> RGB -> Int -> RGB
-blendRGB (MkRGB fr fg fb) (MkRGB br bg bb) alpha =
-  let t = clampAlpha alpha
-      fgWeight = 255 - t
-      bgWeight = t
-      mix : Int -> Int -> Int
-      mix f b = div ((f * fgWeight) + (b * bgWeight)) 255
-   in mkRGB (mix (channelValue fr) (channelValue br))
-            (mix (channelValue fg) (channelValue bg))
-            (mix (channelValue fb) (channelValue bb))
-  where
-    clampAlpha : Int -> Int
-    clampAlpha value =
-      if value < 0 then 0 else if value > 255 then 255 else value
-
+export
 resolveCell : ColorTier -> Cell -> Cell
 resolveCell tier cell =
-  let fgRGB = colorToRGB cell.fg
-      bgRGB = colorToRGB cell.bg
-      blended = blendRGB fgRGB bgRGB cell.alpha
-      fgResolved = resolveColor tier (RGBColor blended)
-      bgResolved = resolveColor tier cell.bg
-   in { fg := fgResolved, bg := bgResolved } cell
-
-resolveCanvas : ColorTier -> Canvas -> Canvas
-resolveCanvas tier (MkCanvas width height rows) =
-  MkCanvas width height (map (map (resolveCell tier)) rows)
-
-rowsToList : Vect rowCount (Vect colCount Cell) -> List (List Cell)
-rowsToList rows = map toList (toList rows)
-
-getEnvNat : String -> IO (Maybe Nat)
-getEnvNat name = do
-  raw <- getEnv name
-  case raw of
-    Nothing => pure Nothing
-    Just value =>
-      case parseInteger value of
-        Just num => if num > 0 then pure (Just (fromInteger num)) else pure Nothing
-        Nothing => pure Nothing
-
-readCommand : String -> IO (Maybe String)
-readCommand cmd = do
-  res <- popen cmd Read
-  case res of
-    Left _ => pure Nothing
-    Right handle => do
-      output <- fRead handle
-      _ <- pclose handle
-      case output of
-        Left _ => pure Nothing
-        Right text => pure (Just text)
-
-readCommandNat : String -> IO (Maybe Nat)
-readCommandNat cmd = do
-  output <- readCommand cmd
-  case output of
-    Nothing => pure Nothing
-    Just text =>
-      case parseInteger text of
-        Just num => if num > 0 then pure (Just (fromInteger num)) else pure Nothing
-        Nothing => pure Nothing
-
-querySize : IO (Nat, Nat)
-querySize = do
-  rows <- readCommandNat "tput lines"
-  cols <- readCommandNat "tput cols"
-  case (rows, cols) of
-    (Just r, Just c) => pure (r, c)
-    _ => do
-      envRows <- getEnvNat "LINES"
-      envCols <- getEnvNat "COLUMNS"
-      let fallbackRows = fromMaybe 24 envRows
-      let fallbackCols = fromMaybe 80 envCols
-      pure (fallbackRows, fallbackCols)
+  let fg = resolveColor tier cell.fg
+      bg = resolveColor tier cell.bg
+   in { fg := fg, bg := bg } cell
 
 export
-initRenderContext : RenderPolicy -> IO RenderContext
+resolveCanvas : ColorTier -> Canvas -> Canvas
+resolveCanvas tier (MkCanvas width height rows) =
+  let resolveRow : Vect width Cell -> Vect width Cell
+      resolveRow rowCells = map (resolveCell tier) rowCells
+   in MkCanvas width height (map resolveRow rows)
+
+rowsToList : Vect height (Vect width Cell) -> List (List Cell)
+rowsToList rows = toList (map toList rows)
+
+export
+initRenderContext : TerminalBackend m => HasIO m => RenderPolicy -> m (RenderContext m)
 initRenderContext policy = do
-  setStdoutUnbuffered
-  caps <- detectCapabilities
+  caps <- getCapabilities
   let tier = resolveTier caps policy
-  size <- querySize
-  sizeRef <- newIORef size
-  lastRef <- newIORef Nothing
+  size <- getSize
+  sizeRef <- liftIO (newIORef size)
+  lastRef <- liftIO (newIORef Nothing)
   pure (MkRenderContext caps policy tier sizeRef lastRef)
 
 export
-getSize : RenderContext -> IO (Nat, Nat)
-getSize ctx = readIORef ctx.sizeRef
+getSizeCtx : TerminalBackend m => HasIO m => RenderContext m -> m (Nat, Nat)
+getSizeCtx ctx = liftIO (readIORef ctx.sizeRef)
 
 export
-refreshSize : RenderContext -> IO ()
+refreshSize : TerminalBackend m => HasIO m => RenderContext m -> m ()
 refreshSize ctx = do
-  size <- querySize
-  writeIORef ctx.sizeRef size
+  size <- getSize
+  liftIO (writeIORef ctx.sizeRef size)
 
-refreshSizeIfNeeded : RenderContext -> IO Bool
+refreshSizeIfNeeded : TerminalBackend m => HasIO m => RenderContext m -> m Bool
 refreshSizeIfNeeded ctx = do
   pending <- resizePending
   if pending
@@ -351,10 +272,10 @@ renderRows row (c :: cs) (p :: ps) = renderRow row c p ++ renderRows (row + 1) c
 renderRows row (c :: cs) [] = renderRow row c [] ++ renderRows (row + 1) cs []
 
 export
-renderCanvas : RenderContext -> Canvas -> IO ()
+renderCanvas : TerminalBackend m => HasIO m => RenderContext m -> Canvas -> m ()
 renderCanvas ctx canvas = do
   resized <- refreshSizeIfNeeded ctx
-  lastCanvas <- readIORef ctx.lastCanvasRef
+  lastCanvas <- liftIO (readIORef ctx.lastCanvasRef)
   let resolved = resolveCanvas ctx.tier canvas
   let resolvedRows = rowsToList resolved.rows
   let sizeChanged = case lastCanvas of
@@ -362,9 +283,9 @@ renderCanvas ctx canvas = do
         Nothing => False
   if resized || sizeChanged
      then do
-       writeIORef ctx.lastCanvasRef Nothing
-       putStr clearScreen
-       putStr (cursorTo 1 1)
+       liftIO (writeIORef ctx.lastCanvasRef Nothing)
+       writeString clearScreen
+       writeString (cursorTo 1 1)
      else pure ()
   let output = case lastCanvas of
         Nothing => renderRows 0 resolvedRows []
@@ -373,6 +294,6 @@ renderCanvas ctx canvas = do
            in if resized || sizeChanged
                 then renderRows 0 resolvedRows []
                 else renderRows 0 resolvedRows prevRows
-  putStr output
-  fflush stdout
-  writeIORef ctx.lastCanvasRef (Just resolved)
+  writeString output
+  flush
+  liftIO (writeIORef ctx.lastCanvasRef (Just resolved))

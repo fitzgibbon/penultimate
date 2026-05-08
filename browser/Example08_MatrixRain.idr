@@ -2,12 +2,11 @@ module Example08_MatrixRain
 
 import Penultimate
 import Penultimate.Backend
-import Penultimate.SystemBackend
+import Penultimate.BrowserBackend
 import Penultimate.Canvas
 import Penultimate.Cell
 import Penultimate.Color
 import Penultimate.Capabilities
-import System
 import Data.Vect
 import Data.Nat
 
@@ -33,7 +32,7 @@ loop term drops frameIdx = do
       let canvas2 = drawText 0 0 "Matrix Rain (Press ESC to exit)" bg canvas1
 
       render term canvas2
-      usleep 50000
+      sleep 50
 
       -- simple drop update logic
       let newDrops = map (\y => if y > rows + 20 then (the Nat 0) else y + 1) drops

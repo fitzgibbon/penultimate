@@ -47,6 +47,7 @@ disableRaw = do
   resetRawMode
   pure True
 
+export
 modifiersFromCode : Int -> Modifiers
 modifiersFromCode code =
   case code of
@@ -59,6 +60,7 @@ modifiersFromCode code =
     8 => MkModifiers True True True
     _ => noModifiers
 
+export
 parseParams : String -> List Int
 parseParams raw = parseParamsChars (unpack raw) [] []
   where
@@ -75,6 +77,7 @@ parseParams raw = parseParamsChars (unpack raw) [] []
     parseParamsChars (ch :: rest) current acc =
       parseParamsChars rest (current ++ [ch]) acc
 
+export
 isFinal : Char -> Bool
 isFinal ch =
   ch == 'A' || ch == 'B' || ch == 'C' || ch == 'D' ||
@@ -85,18 +88,21 @@ collect acc = do
   ch <- getChar
   if isFinal ch then pure (acc ++ singleton ch) else collect (acc ++ singleton ch)
 
+export
 initParams : String -> String
 initParams seq =
   case reverse (unpack seq) of
     [] => ""
     _ :: rest => pack (reverse rest)
 
+export
 lastChar : String -> Char
 lastChar seq =
   case reverse (unpack seq) of
     [] => ' '
     ch :: _ => ch
 
+export
 decodeTilde : List Int -> Modifiers -> Key
 decodeTilde params mods =
   case params of
@@ -116,6 +122,7 @@ decodeTilde params mods =
     24 :: _ => KeySpecial (FunctionKey 12) mods
     _ => KeySpecial EscapeKey mods
 
+export
 decodeCsi : Char -> List Int -> Modifiers -> Key
 decodeCsi code params mods =
   case code of
@@ -160,6 +167,7 @@ readKey = do
   ch <- getChar
   if ch == '\x1b' then readEscape else pure (KeyChar ch noModifiers)
 
+export
 readCharMaybe : IO (Maybe Char)
 readCharMaybe =
   case stdin of

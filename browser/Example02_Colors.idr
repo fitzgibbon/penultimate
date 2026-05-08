@@ -2,7 +2,7 @@ module Example02_Colors
 
 import Penultimate
 import Penultimate.Backend
-import Penultimate.SystemBackend
+import Penultimate.BrowserBackend
 import Data.Nat
 import Penultimate.Canvas
 import Data.Nat

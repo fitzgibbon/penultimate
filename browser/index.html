@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Penultimate Terminal</title>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <style>
+        body { background: black; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        #terminal { width: 800px; height: 600px; }
+        #menu { margin-bottom: 20px; }
+        button { background: #333; color: white; border: 1px solid #555; padding: 5px 10px; cursor: pointer; }
+        button:hover { background: #555; }
+    </style>
+</head>
+<body>
+    <div id="menu">
+        <button onclick="runExample(1)">1: Hello World</button>
+        <button onclick="runExample(2)">2: Colors</button>
+        <button onclick="runExample(3)">3: Input Echo</button>
+        <button onclick="runExample(4)">4: Bordered Window</button>
+        <button onclick="runExample(5)">5: Animation</button>
+        <button onclick="runExample(6)">6: Roguelike</button>
+        <button onclick="runExample(7)">7: Mandelbrot</button>
+        <button onclick="runExample(8)">8: Matrix Rain</button>
+        <button onclick="runExample(9)">9: Bouncing Ball</button>
+        <button onclick="runExample(10)">10: Drawing App</button>
+    </div>
+    <div id="terminal"></div>
+    <script>
+        var term = new Terminal({
+            cols: 80,
+            rows: 24,
+            cursorBlink: true
+        });
+        term.open(document.getElementById('terminal'));
+
+        // Expose functions for Idris FFI
+        window.penultimate_writeString = function(s) {
+            term.write(s);
+        };
+
+        window.penultimate_inputBuffer = [];
+        term.onData(e => {
+            window.penultimate_inputBuffer.push(...e.split(''));
+        });
+
+        window.penultimate_readChar = function() {
+            if (window.penultimate_inputBuffer.length > 0) {
+                return window.penultimate_inputBuffer.shift();
+            }
+            return '\0'; // Or block/yield in a real async environment
+        };
+
+        window.penultimate_pollChar = function() {
+            if (window.penultimate_inputBuffer.length > 0) {
+                return window.penultimate_inputBuffer.shift();
+            }
+            return null;
+        };
+
+        function runExample(num) {
+            term.clear();
+            term.focus();
+            // Start main Idris execution block here when running
+            // Assuming Main() receives arguments, or we mock Process.argv in JS
+            window.process = { argv: ["node", "main.js", num.toString()] };
+            try {
+                if (typeof Main__runExampleBrowser !== 'undefined') {
+                    Main__runExampleBrowser();
+                } else if (typeof __idris_main !== 'undefined') {
+                    __idris_main();
+                }
+            } catch (e) {
+                console.log("Idris execution:", e);
+            }
+        }
+    </script>
+    <script src="build/exec/penultimate-browser.js"></script>
+</body>
+</html>

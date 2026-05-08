@@ -15,3 +15,5 @@ exec/
 *.ttm
 .idris2/
 idris2-pack/
+
+browser/build/

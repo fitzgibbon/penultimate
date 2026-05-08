@@ -2,12 +2,11 @@ module Example09_BouncingBall
 
 import Penultimate
 import Penultimate.Backend
-import Penultimate.SystemBackend
+import Penultimate.BrowserBackend
 import Penultimate.Canvas
 import Penultimate.Cell
 import Penultimate.Color
 import Penultimate.Capabilities
-import System
 import Data.Nat
 
 record Ball where
@@ -34,7 +33,7 @@ loop term ball = do
       let canvas4 = drawText 0 2 " Bouncing Ball (Press ESC) " bg canvas3
 
       render term canvas4
-      usleep 30000
+      sleep 30
 
       let nx = ball.x + ball.dx
       let ny = ball.y + ball.dy

@@ -2,7 +2,7 @@ module Example05_Animation
 
 import Penultimate
 import Penultimate.Backend
-import Penultimate.SystemBackend
+import Penultimate.BrowserBackend
 import Data.Nat
 import Penultimate.Canvas
 import Data.Nat
@@ -12,7 +12,6 @@ import Penultimate.Color
 import Data.Nat
 import Penultimate.Capabilities
 import Data.Nat
-import System
 
 loop : Penultimate IO -> Nat -> IO ()
 loop term frameIdx = do
@@ -33,7 +32,7 @@ loop term frameIdx = do
       let canvas4 = drawText 12 2 ("Frame: " ++ show frameIdx) bg canvas3
 
       render term canvas4
-      usleep 50000 -- 50ms = 20fps
+      sleep 50 -- 50ms = 20fps
       loop term (frameIdx + 1)
 
 export

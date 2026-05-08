@@ -2,7 +2,7 @@ module Example07_Mandelbrot
 
 import Penultimate
 import Penultimate.Backend
-import Penultimate.SystemBackend
+import Penultimate.BrowserBackend
 import Data.Nat
 import Penultimate.Canvas
 import Data.Nat

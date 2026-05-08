@@ -2,7 +2,7 @@ module Example03_InputEcho
 
 import Penultimate
 import Penultimate.Backend
-import Penultimate.SystemBackend
+import Penultimate.BrowserBackend
 import Data.Nat
 import Penultimate.Canvas
 import Data.Nat

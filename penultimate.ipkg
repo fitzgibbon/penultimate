@@ -3,6 +3,13 @@ package penultimate
 version = "0.1.0"
 sourcedir = "src"
 modules = Penultimate
+        , Penultimate.AutoBackend
+        , Penultimate.BrowserBackend
+        , Penultimate.RecordingBackend
+        , Penultimate.MockBackend
+        , Penultimate.SystemBackend
+        , Penultimate.InputBackend
+        , Penultimate.Backend
         , Penultimate.Ansi
         , Penultimate.Attr
         , Penultimate.Capabilities

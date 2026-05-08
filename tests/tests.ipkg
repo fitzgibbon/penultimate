@@ -1,0 +1,6 @@
+package penultimate-tests
+depends = base
+sourcedir = "."
+modules = TestHeadless
+executable = "penultimate-tests"
+main = Main
