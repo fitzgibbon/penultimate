@@ -28,7 +28,7 @@ run = do
   res <- execStateT initMockState basicRenderTest
   let out = res.output
 
-  if isInfixOf "<CLEAR>" out && isInfixOf "<MOVE 1,1>" out && isInfixOf "<STYLE>OK" out
+  if isInfixOf "<DRAW 2,2 'OK'>" out
      then do
        putStrLn "Test passed: Mock backend successfully intercepted semantic rendering calls."
      else do

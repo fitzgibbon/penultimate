@@ -19,19 +19,14 @@ Eq RenderStyle where
 
 public export
 interface Monad m => TerminalBackend m where
+  initBackend : m ()
+  shutdownBackend : m ()
   clearScreen : m ()
-  hideCursor : m ()
-  showCursor : m ()
-  moveCursor : Nat -> Nat -> m ()
-  applyStyle : RenderStyle -> m ()
-  writeChar : Char -> m ()
-  writeString : String -> m ()
+  drawTextAt : Nat -> Nat -> RenderStyle -> String -> m ()
   flush : m ()
   readChar : m Char
   pollChar : m (Maybe Char)
   getSize : m (Nat, Nat)
-  enableRaw : m Bool
-  disableRaw : m Bool
   resizePending : m Bool
   getCapabilities : m Capabilities
   sleep : Int -> m ()

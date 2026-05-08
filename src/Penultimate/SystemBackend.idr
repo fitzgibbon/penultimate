@@ -61,21 +61,23 @@ querySize = do
 
 export
 TerminalBackend IO where
+  initBackend = do
+    _ <- Penultimate.Input.enableRaw
+    putStr Penultimate.Ansi.hideCursor
+    putStr Penultimate.Ansi.clearScreen
+    putStr (Penultimate.Ansi.cursorTo 1 1)
+  shutdownBackend = do
+    _ <- Penultimate.Input.disableRaw
+    putStr Penultimate.Ansi.resetAttrs
+    putStr Penultimate.Ansi.showCursor
   clearScreen = putStr Penultimate.Ansi.clearScreen
-  hideCursor = putStr Penultimate.Ansi.hideCursor
-  showCursor = putStr Penultimate.Ansi.showCursor
-  moveCursor r c = putStr (Penultimate.Ansi.cursorTo r c)
-  applyStyle style = putStr (styleSeq style)
-  writeChar c = putStr (singleton c)
-  writeString s = putStr s
+  drawTextAt r c style text = putStr (Penultimate.Ansi.cursorTo r c ++ styleSeq style ++ text)
   flush = fflush stdout
   readChar = getChar
   pollChar = do
     res <- readCharMaybe
     pure res
   getSize = querySize
-  enableRaw = Penultimate.Input.enableRaw
-  disableRaw = Penultimate.Input.disableRaw
   resizePending = Penultimate.Signal.resizePending
   getCapabilities = detectCapabilities
   sleep ms = if ms >= 0 then safeSleep (ms * 1000) else pure ()

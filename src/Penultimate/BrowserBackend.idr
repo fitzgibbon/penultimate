@@ -26,19 +26,19 @@ safePollChar = do
 
 export
 TerminalBackend IO where
+  initBackend = do
+    safeWriteString "\x1b[?25l"
+    safeWriteString "\x1b[2J"
+    safeWriteString "\x1b[1;1H"
+  shutdownBackend = do
+    safeWriteString "\x1b[0m"
+    safeWriteString "\x1b[?25h"
   clearScreen = safeWriteString "\x1b[2J"
-  hideCursor = safeWriteString "\x1b[?25l"
-  showCursor = safeWriteString "\x1b[?25h"
-  moveCursor r c = safeWriteString ("\x1b[" ++ show r ++ ";" ++ show c ++ "H")
-  applyStyle style = safeWriteString (styleSeq style)
-  writeChar c = safeWriteString (cast c)
-  writeString s = safeWriteString s
+  drawTextAt r c style text = safeWriteString ("\x1b[" ++ show r ++ ";" ++ show c ++ "H" ++ styleSeq style ++ text)
   flush = pure ()
   readChar = safeReadChar
   pollChar = safePollChar
   getSize = pure (24, 80)
-  enableRaw = pure True
-  disableRaw = pure True
   resizePending = pure False
   getCapabilities = pure (MkCapabilities True True True)
   sleep ms = pure ()

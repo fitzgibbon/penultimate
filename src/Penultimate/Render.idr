@@ -188,7 +188,7 @@ renderStepsForRow row cells prevCells = go 0 cells prevCells
 renderRow : TerminalBackend m => Nat -> List Cell -> List Cell -> m ()
 renderRow row cells prevCells = do
   let 0 _ = coalesceCorrect (renderStepsForRow row cells prevCells)
-  go 0 cells prevCells Nothing
+  go 0 cells prevCells
   where
     cellsToString : List Cell -> String
     cellsToString runCells = pack (map (\cell => cell.ch) runCells)
@@ -210,35 +210,25 @@ renderRow row cells prevCells = do
           else ([], c :: cs, [], 0)
 
     mutual
-      go : Nat -> List Cell -> List Cell -> Maybe RenderStyle -> m ()
-      go _ [] _ _ = pure ()
-      go col (c :: cs) (p :: ps) currentStyle =
+      go : Nat -> List Cell -> List Cell -> m ()
+      go _ [] _ = pure ()
+      go col (c :: cs) (p :: ps) =
         if c == p
-           then go (col + 1) cs ps currentStyle
-           else emitRun col (c :: cs) (p :: ps) currentStyle
-      go col (c :: cs) [] currentStyle = emitRun col (c :: cs) [] currentStyle
+           then go (col + 1) cs ps
+           else emitRun col (c :: cs) (p :: ps)
+      go col (c :: cs) [] = emitRun col (c :: cs) []
 
-      emitRun : Nat -> List Cell -> List Cell -> Maybe RenderStyle -> m ()
-      emitRun col (c :: cs) prevs currentStyle = do
+      emitRun : Nat -> List Cell -> List Cell -> m ()
+      emitRun col (c :: cs) prevs = do
         let style = styleFromCell c
         let (runCells, restCells, restPrev, runLen) = collectRun style (c :: cs) prevs
         let text = cellsToString runCells
 
-        moveCursor (row + 1) (col + 1)
-        case currentStyle of
-          Just current => if current == style then pure () else applyStyle style
-          Nothing => applyStyle style
+        drawTextAt (row + 1) (col + 1) style text
 
-        -- Emit semantic chars instead of writeString if we want to trace them clearly
-        -- writeString text
-        let emitChars : List Char -> m ()
-            emitChars [] = pure ()
-            emitChars (x :: xs) = do writeChar x; emitChars xs
-        emitChars (unpack text)
+        go (col + runLen) restCells restPrev
 
-        go (col + runLen) restCells restPrev (Just style)
-
-      emitRun _ [] _ _ = pure ()
+      emitRun _ [] _ = pure ()
 
 renderRows : TerminalBackend m => Nat -> List (List Cell) -> List (List Cell) -> m ()
 renderRows _ [] _ = pure ()
@@ -263,7 +253,6 @@ renderCanvas ctx canvas = do
      then do
        liftIO (writeIORef ctx.lastCanvasRef Nothing)
        clearScreen
-       moveCursor 1 1
      else pure ()
   case lastCanvas of
     Nothing => renderRows 0 resolvedRows []

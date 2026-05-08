@@ -3,7 +3,6 @@ module Penultimate
 import Penultimate.Ansi
 import Penultimate.Backend
 import Penultimate.Capabilities
-import Penultimate.Color
 import Penultimate.Canvas
 import public Penultimate.Input
 import public Penultimate.InputBackend
@@ -18,21 +17,14 @@ record Penultimate (m : Type -> Type) where
 export
 initPenultimate : TerminalBackend m => HasIO m => RenderPolicy -> m (Penultimate m)
 initPenultimate policy = do
+  initBackend
   ctx <- Render.initRenderContext policy
-  _ <- Penultimate.Backend.enableRaw
-  hideCursor
-  clearScreen
-  moveCursor 1 1
-  flush
   pure (MkPenultimate ctx)
 
 export
 shutdown : TerminalBackend m => Penultimate m -> m ()
 shutdown _ = do
-  _ <- Penultimate.Backend.disableRaw
-  writeString resetAttrs
-  showCursor
-  flush
+  shutdownBackend
 
 export
 render : TerminalBackend m => HasIO m => Penultimate m -> Canvas -> m ()

@@ -2,6 +2,7 @@ module Penultimate.RecordingBackend
 
 import Penultimate.Backend
 import Penultimate.Capabilities
+import Penultimate.Ansi
 import System
 import System.File
 
@@ -54,26 +55,23 @@ getMonotonicTimeMs = do
 
 export
 (TerminalBackend m, HasIO m) => TerminalBackend (RecordingBackendT m) where
+  initBackend = MkRecording (\_, _ => initBackend)
+  shutdownBackend = MkRecording (\_, _ => shutdownBackend)
   clearScreen = MkRecording (\_, _ => clearScreen)
-  hideCursor = MkRecording (\_, _ => hideCursor)
-  showCursor = MkRecording (\_, _ => showCursor)
-  moveCursor r c = MkRecording (\_, _ => moveCursor r c)
-  applyStyle style = MkRecording (\_, _ => applyStyle style)
-  writeChar c = MkRecording (\_, _ => writeChar c)
-  writeString s = MkRecording (\fH, startT => do
+  drawTextAt r c style text = MkRecording (\fH, startT => do
     now <- liftIO getMonotonicTimeMs
     let elapsedMs = now - startT
     let elapsedSec = cast {to=Double} elapsedMs / 1000.0
-    let jsonLine = "[ " ++ show elapsedSec ++ ", \"o\", \"" ++ escapeStr s ++ "\" ]\n"
+    -- To keep it valid asciinema JSON we need actual ANSI escapes printed to the screen log
+    let ansiPayload = Penultimate.Ansi.cursorTo r c ++ styleSeq style ++ text
+    let jsonLine = "[ " ++ show elapsedSec ++ ", \"o\", \"" ++ escapeStr ansiPayload ++ "\" ]\n"
     ignore $ liftIO (fPutStr fH jsonLine)
     ignore $ liftIO (fflush fH)
-    writeString s)
+    drawTextAt r c style text)
   flush = MkRecording (\_, _ => flush)
   readChar = MkRecording (\_, _ => readChar)
   pollChar = MkRecording (\_, _ => pollChar)
   getSize = MkRecording (\_, _ => getSize)
-  enableRaw = MkRecording (\_, _ => enableRaw)
-  disableRaw = MkRecording (\_, _ => disableRaw)
   resizePending = MkRecording (\_, _ => resizePending)
   getCapabilities = MkRecording (\_, _ => getCapabilities)
   sleep ms = MkRecording (\_, _ => Penultimate.Backend.sleep ms)
