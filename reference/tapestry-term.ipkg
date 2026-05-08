@@ -1,0 +1,13 @@
+package tapestry-term
+
+sourcedir = "src"
+modules = Terminal.Capabilities
+        , Terminal.Color
+        , Terminal.Attr
+        , Terminal.Cell
+        , Terminal.Frame
+        , Terminal.Ansi
+        , Terminal.Render
+        , Terminal.Input
+        , Terminal.Signal
+        , Terminal.Terminal
