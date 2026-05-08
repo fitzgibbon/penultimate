@@ -5,3 +5,6 @@
 # Idris 1
 *.ibc
 *.o
+
+build/
+*.sh

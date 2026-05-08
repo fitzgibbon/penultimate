@@ -1,0 +1,15 @@
+package penultimate-examples
+depends = base, penultimate
+sourcedir = "."
+modules = Example01_HelloWorld
+        , Example02_Colors
+        , Example03_InputEcho
+        , Example04_BorderedWindow
+        , Example05_Animation
+        , Example06_RoguelikeMovement
+        , Example07_Mandelbrot
+        , Example08_MatrixRain
+        , Example09_BouncingBall
+        , Example10_DrawingApp
+executable = "penultimate-example-runner"
+main = Main

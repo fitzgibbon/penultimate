@@ -1,0 +1,16 @@
+package penultimate
+
+version = "0.1.0"
+sourcedir = "src"
+modules = Penultimate
+        , Penultimate.Ansi
+        , Penultimate.Attr
+        , Penultimate.Capabilities
+        , Penultimate.Cell
+        , Penultimate.Canvas
+        , Penultimate.Color
+        , Penultimate.Input
+        , Penultimate.Render
+        , Penultimate.Signal
+
+depends = base

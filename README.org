@@ -1,0 +1,40 @@
+* Penultimate
+
+Penultimate is a high-performance terminal abstraction library for Idris 2.
+It supports robust TrueColor handling, ANSI escapes, non-blocking polling, and optimal
+SSH redraws by maintaining an internal frame buffer (Canvas) and emitting minimal ANSI deltas.
+
+** Goals & Features
+- **Cross-platform**: Support modern ANSI-compatible terminals, gracefully degrading to 256/16 colors.
+- **Double Buffered Canvas**: Draw off-screen, diff with previous frame, and render cleanly over SSH.
+- **High Performance**: Optimized run-length encoding for terminal escapes.
+- **Declarative API**: Build UIs by placing cells (`Char` + `Fg` + `Bg` + `Attrs`) onto the Canvas.
+
+** Building
+A `flake.nix` is provided for Nix users. Run:
+#+BEGIN_SRC bash
+nix develop
+make install
+make build-examples
+#+END_SRC
+
+** Examples
+Run the examples executable (found in `examples/build/exec/penultimate-example-runner`):
+
+- `1`: **Hello World** - Basic text rendering on the canvas.
+- `2`: **Colors** - Demonstrates TrueColor gradient drawing using primitive loops.
+- `3`: **Input Echo** - Demonstrates non-blocking `pollEvent` for custom game loops.
+- `4`: **Bordered Window** - Rendering overlapping boxes and drawing borders.
+- `5`: **Animation** - Non-blocking event loops rendering at 20fps.
+- `6`: **Roguelike Movement** - Classic WASD roguelike character movement demo.
+- `7`: **Mandelbrot** - Draws the Mandelbrot set directly into the terminal canvas.
+- `8`: **Matrix Rain** - The classic Matrix digital rain effect, 80 columns wide.
+- `9`: **Bouncing Ball** - A real-time physics bouncing ball with screen boundary collisions.
+- `10`: **Drawing App** - A mini MS Paint in the terminal; arrows to move, space to draw, 'C' to change color.
+
+** API Overview
+- `initPenultimate` / `shutdown` - Lifecycle management.
+- `render` - Pushes a `Canvas` to the terminal.
+- `pollEvent` - Returns `Just Key` if an event is available, `Nothing` otherwise.
+- `emptyCanvas` / `canvasFrom` - Instantiates frame buffers.
+- `setCell` / `fillRect` / `drawText` / `drawRect` - Modifies a canvas state.
