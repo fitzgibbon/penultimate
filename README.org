@@ -15,3 +15,10 @@ nix develop
 # Build library
 pack build penultimate.ipkg
 #+END_SRC
+
+** Examples
+You can find example code in the `examples/` directory.
+
+*** Web Example
+To view the browser DOM backend in action, check out the live web example:
+[[https://fitzgibbon.github.io/penultimate/][Live Web Example]]
