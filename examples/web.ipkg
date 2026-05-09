@@ -1,0 +1,8 @@
+package penultimate_web
+
+depends = base >= 0.6.0, penultimate
+
+sourcedir = "."
+main = Web
+executable = webjs
+opts = "--cg javascript"

@@ -1,0 +1,17 @@
+package penultimate
+
+version = 0.1.0
+authors = "jules"
+
+sourcedir = "src"
+
+modules = Penultimate.Core
+        , Penultimate.Headless
+        , Penultimate.TTY
+        , Penultimate.DOM
+
+depends = base >= 0.6.0
+        -- , dom
+
+-- executable = penultimate_example
+-- main = Main

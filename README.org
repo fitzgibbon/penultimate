@@ -1,0 +1,17 @@
+* penultimate
+A curses-like terminal interface written in Idris 2 with both an ANSI TTY backend and a browser DOM backend, as well as a headless backend for automated testing.
+
+** Features
+- ANSI Truecolor and 16-color fallback support.
+- DOM backend with automatic grid layout mapping to <span> elements.
+- Headless backend for pure testing in CI.
+- Double-buffering and delta rendering for minimal output over SSH / minimal DOM rewrites.
+- Typed `drawRect` to ensure drawing bounds safety.
+
+** Building
+This project uses Idris 2 and Nix.
+#+BEGIN_SRC sh
+nix develop
+# Build library
+pack build penultimate.ipkg
+#+END_SRC

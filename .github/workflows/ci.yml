@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: cachix/install-nix-action@v22
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+    - name: Run Tests
+      run: nix develop --command sh -c "export IDRIS2_PREFIX=\$PWD/local_install && idris2 --install penultimate.ipkg && idris2 --build tests/tests.ipkg && tests/build/exec/tests"
+    - name: Build Web Example
+      run: nix develop --command sh -c "export IDRIS2_PREFIX=\$PWD/local_install && idris2 --build examples/web.ipkg"
+    - name: Upload Web Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: web-example
+        path: examples/build/exec/webjs
+
+  deploy-pages:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: web-example
+        path: web-example
+    - name: Create index.html
+      run: |
+        echo '<!DOCTYPE html><html><head><title>Penultimate Web</title></head><body><div id="penultimate-root"></div><script src="webjs"></script></body></html>' > web-example/index.html
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./web-example
