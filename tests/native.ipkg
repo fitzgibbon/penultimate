@@ -1,0 +1,5 @@
+package penultimate_tests_native
+depends = base >= 0.6.0, penultimate
+sourcedir = "."
+main = TestsNative
+executable = tests_native
