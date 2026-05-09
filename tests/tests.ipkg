@@ -1,7 +1,0 @@
-package penultimate_tests
-
-depends = base >= 0.6.0, penultimate
-
-sourcedir = "."
-main = Main
-executable = tests

@@ -1,0 +1,6 @@
+package penultimate_tests_browser
+depends = base >= 0.6.0, penultimate
+sourcedir = "."
+main = TestsBrowser
+executable = tests_browser.js
+opts = "--cg javascript"
