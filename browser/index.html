@@ -3,11 +3,10 @@
 <head>
     <meta charset="utf-8">
     <title>Penultimate Terminal</title>
-    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
     <style>
-        body { background: black; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        #terminal { width: 800px; height: 600px; }
+        body { background: black; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; }
+        #terminal { display: grid; grid-template-rows: repeat(24, 1fr); grid-template-columns: repeat(80, 1fr); background-color: black; border: 1px solid #333; line-height: 1; }
+        .cell { display: flex; align-items: center; justify-content: center; width: 10px; height: 20px; white-space: pre; }
         #menu { margin-bottom: 20px; }
         button { background: #333; color: white; border: 1px solid #555; padding: 5px 10px; cursor: pointer; }
         button:hover { background: #555; }
@@ -28,28 +27,60 @@
     </div>
     <div id="terminal"></div>
     <script>
-        var term = new Terminal({
-            cols: 80,
-            rows: 24,
-            cursorBlink: true
-        });
-        term.open(document.getElementById('terminal'));
+        const terminal = document.getElementById('terminal');
+        const rows = 24;
+        const cols = 80;
+        const grid = [];
 
-        // Expose functions for Idris FFI
-        window.penultimate_writeString = function(s) {
-            term.write(s);
+        window.penultimate_initDOM = function() {
+            terminal.innerHTML = '';
+            for (let r = 0; r < rows; r++) {
+                grid[r] = [];
+                for (let c = 0; c < cols; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.textContent = ' ';
+                    terminal.appendChild(cell);
+                    grid[r][c] = cell;
+                }
+            }
+        };
+
+        window.penultimate_shutdownDOM = function() {
+            terminal.innerHTML = '';
+        };
+
+        window.penultimate_clearDOM = function() {
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    grid[r][c].textContent = ' ';
+                    grid[r][c].style.color = '';
+                    grid[r][c].style.backgroundColor = '';
+                }
+            }
+        };
+
+        window.penultimate_drawChar = function(r, c, fg, bg, ch) {
+            if (r >= 0 && r < rows && c >= 0 && c < cols) {
+                const el = grid[r][c];
+                el.textContent = ch;
+                el.style.color = fg;
+                el.style.backgroundColor = bg;
+            }
         };
 
         window.penultimate_inputBuffer = [];
-        term.onData(e => {
-            window.penultimate_inputBuffer.push(...e.split(''));
+        window.addEventListener('keydown', e => {
+            if (e.key.length === 1) {
+                window.penultimate_inputBuffer.push(e.key);
+            }
         });
 
         window.penultimate_readChar = function() {
             if (window.penultimate_inputBuffer.length > 0) {
                 return window.penultimate_inputBuffer.shift();
             }
-            return '\0'; // Or block/yield in a real async environment
+            return '\0';
         };
 
         window.penultimate_pollChar = function() {
@@ -60,21 +91,21 @@
         };
 
         function runExample(num) {
-            term.clear();
-            term.focus();
-            // Start main Idris execution block here when running
-            // Assuming Main() receives arguments, or we mock Process.argv in JS
+            if (grid.length === 0) window.penultimate_initDOM();
+            window.penultimate_clearDOM();
             window.process = { argv: ["node", "main.js", num.toString()] };
             try {
-                if (typeof Main__runExampleBrowser !== 'undefined') {
-                    Main__runExampleBrowser();
-                } else if (typeof __idris_main !== 'undefined') {
-                    __idris_main();
+                if (typeof Main__main !== 'undefined') {
+                    Main__main();
+                } else if (typeof Main__runExampleBrowser !== 'undefined') {
+                    Main__runExampleBrowser(num);
                 }
             } catch (e) {
                 console.log("Idris execution:", e);
             }
         }
+
+        window.onload = function() { window.penultimate_initDOM(); };
     </script>
     <script src="build/exec/penultimate-browser.js"></script>
 </body>

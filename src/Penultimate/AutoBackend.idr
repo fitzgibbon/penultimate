@@ -1,4 +1,3 @@
-module Penultimate.AutoBackend
 
 import Penultimate.Backend
 import Penultimate.Capabilities

@@ -8,7 +8,7 @@ import Penultimate.Input
 collect : TerminalBackend m => String -> m String
 collect acc = do
   ch <- readChar
-  if isFinal ch then pure (acc ++ singleton ch) else collect (acc ++ singleton ch)
+  if isFinal ch then pure (acc ++ cast ch) else collect (acc ++ cast ch)
 
 readCsi : TerminalBackend m => m Key
 readCsi = do
@@ -47,7 +47,7 @@ collectMaybe acc = do
   next <- pollChar
   case next of
     Nothing => pure acc
-    Just ch => if isFinal ch then pure (acc ++ singleton ch) else collectMaybe (acc ++ singleton ch)
+    Just ch => if isFinal ch then pure (acc ++ cast ch) else collectMaybe (acc ++ cast ch)
 
 readCsiMaybe : TerminalBackend m => m Key
 readCsiMaybe = do

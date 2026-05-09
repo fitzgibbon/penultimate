@@ -1,4 +1,7 @@
 module Penultimate.SystemBackend
+import Data.Fin
+import Data.Vect
+import Data.So
 
 import Penultimate.Backend
 import Penultimate.Capabilities
@@ -71,7 +74,9 @@ TerminalBackend IO where
     putStr Penultimate.Ansi.resetAttrs
     putStr Penultimate.Ansi.showCursor
   clearScreen = putStr Penultimate.Ansi.clearScreen
-  drawTextAt r c style text = putStr (Penultimate.Ansi.cursorTo r c ++ styleSeq style ++ text)
+  drawChar r c sc = putStr (Penultimate.Ansi.cursorTo (finToNat r + 1) (finToNat c + 1) ++ styleSeq sc.style ++ cast sc.char)
+  drawLine r c chars _ = pure () -- Add run-length optimization here later if desired
+  drawRect r c rect _ _ = pure ()
   flush = fflush stdout
   readChar = getChar
   pollChar = do
