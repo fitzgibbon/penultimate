@@ -22,15 +22,15 @@ formatKey (KeySpecial ArrowRight _) = "Right Arrow"
 formatKey (KeySpecial EscapeKey _) = "Escape"
 formatKey _ = "Other Key"
 
-loop : Penultimate IO -> Canvas -> String -> IO ()
+loop : Penultimate IO -> AnyCanvas -> String -> IO ()
 loop term bgCanvas lastKey = do
   (rows, cols) <- refreshSize term
   let bg = defaultCell
   let textCell = withFg bg (Ansi16Color BrightYellow)
 
-  let canvas1 = drawText 2 2 "Input Echo Example" bg bgCanvas
-  let canvas2 = drawText 4 2 ("Last key pressed: " ++ lastKey) textCell canvas1
-  let canvas3 = drawText (rows `minus` 2) 2 "Press ESC to exit..." bg canvas2
+  let canvas1 = drawAnyText 2 2 "Input Echo Example" bg bgCanvas
+  let canvas2 = drawAnyText 4 2 ("Last key pressed: " ++ lastKey) textCell canvas1
+  let canvas3 = drawAnyText (rows `minus` 2) 2 "Press ESC to exit..." bg canvas2
 
   render term canvas3
 
@@ -44,5 +44,5 @@ run : IO ()
 run = do
   term <- initPenultimate PreferBest
   (rows, cols) <- getSize term
-  loop term (emptyCanvas rows cols defaultCell) "None"
+  loop term (emptyAnyCanvas rows cols defaultCell) "None"
   shutdown term

@@ -38,21 +38,21 @@ run = do
   let widthF = cast cols
   let heightF = cast rows
 
-  let drawMandel : Nat -> Nat -> Canvas -> Canvas
+  let drawMandel : Nat -> Nat -> AnyCanvas -> AnyCanvas
       drawMandel r c acc =
         let cx = (cast c / widthF) * 3.5 - 2.5
             cy = (cast r / heightF) * 2.0 - 1.0
             iter = mandelbrot cx cy
             cell = withBg bg (getColor iter)
-        in setCell r c cell acc
+        in setAnyCell r c cell acc
 
-  let canvas1 = canvasFrom rows cols (\r, c =>
+  let canvas1 = anyCanvasFrom rows cols (\r, c =>
         let cx = (cast c / widthF) * 3.5 - 2.5
             cy = (cast r / heightF) * 2.0 - 1.0
             iter = mandelbrot cx cy
         in withBg bg (getColor iter))
 
-  let canvas2 = drawText 0 0 "Mandelbrot Set. Press any key..." bg canvas1
+  let canvas2 = drawAnyText 0 0 "Mandelbrot Set. Press any key..." bg canvas1
 
   render term canvas2
   _ <- readKeyEvent term

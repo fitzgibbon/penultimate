@@ -27,7 +27,7 @@ shutdown _ = do
   shutdownBackend
 
 export
-render : TerminalBackend m => HasIO m => Penultimate m -> Canvas -> m ()
+render : TerminalBackend m => HasIO m => Penultimate m -> AnyCanvas -> m ()
 render term canvas = Render.renderCanvas term.renderCtx canvas
 
 export

@@ -21,7 +21,7 @@ run = do
 
   let bg = defaultCell
 
-  let drawGradient : Nat -> Canvas -> Canvas
+  let drawGradient : Nat -> AnyCanvas -> AnyCanvas
       drawGradient Z c = c
       drawGradient (S k) c =
         let r = cast ((k * 255) `div` (cols + 1))
@@ -29,12 +29,12 @@ run = do
             b = cast (((cols `minus` k) * 255) `div` (cols + 1))
             color = RGBColor (mkRGB r g b)
             cell = withBg bg color
-        in drawGradient k (fillRect 2 k (rows `minus` 4) 1 cell c)
+        in drawGradient k (fillAnyRect 2 k (rows `minus` 4) 1 cell c)
 
-  let canvas1 = emptyCanvas rows cols bg
-  let canvas2 = drawText 0 2 "TrueColor Gradient Example" bg canvas1
+  let canvas1 = emptyAnyCanvas rows cols bg
+  let canvas2 = drawAnyText 0 2 "TrueColor Gradient Example" bg canvas1
   let canvas3 = drawGradient cols canvas2
-  let canvas4 = drawText (rows `minus` 1) 2 "Press any key to exit..." bg canvas3
+  let canvas4 = drawAnyText (rows `minus` 1) 2 "Press any key to exit..." bg canvas3
 
   render term canvas4
   _ <- readKeyEvent term

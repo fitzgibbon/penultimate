@@ -26,10 +26,10 @@ loop term frameIdx = do
       let fgColor = Ansi256Color (cast (16 + (frameIdx `mod` 200)))
       let boxCell = withBg bg fgColor
 
-      let canvas1 = emptyCanvas rows cols bg
-      let canvas2 = fillRect 5 pos 5 10 boxCell canvas1
-      let canvas3 = drawText 2 2 "Non-blocking Animation (Press ESC to exit)" bg canvas2
-      let canvas4 = drawText 12 2 ("Frame: " ++ show frameIdx) bg canvas3
+      let canvas1 = emptyAnyCanvas rows cols bg
+      let canvas2 = fillAnyRect 5 pos 5 10 boxCell canvas1
+      let canvas3 = drawAnyText 2 2 "Non-blocking Animation (Press ESC to exit)" bg canvas2
+      let canvas4 = drawAnyText 12 2 ("Frame: " ++ show frameIdx) bg canvas3
 
       render term canvas4
       sleep 50 -- 50ms = 20fps

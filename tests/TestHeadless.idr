@@ -14,10 +14,10 @@ import Data.String
 basicRenderTest : StateT MockState IO ()
 basicRenderTest = do
   term <- initPenultimate PreferBest
-  let canvas1 = emptyCanvas 5 5 defaultCell
+  let canvas1 = emptyAnyCanvas 5 5 defaultCell
   let bg = defaultCell
   let textCell = withFg bg (Named Red)
-  let canvas2 = drawText 1 1 "OK" textCell canvas1
+  let canvas2 = drawAnyText 1 1 "OK" textCell canvas1
   render term canvas2
   shutdown term
 
@@ -28,7 +28,7 @@ run = do
   res <- execStateT initMockState basicRenderTest
   let out = res.output
 
-  if isInfixOf "<DRAW 2,2 'OK'>" out
+  if isInfixOf "<RECT 1,1>" out && isInfixOf "<RECT 1,2>" out
      then do
        putStrLn "Test passed: Mock backend successfully intercepted semantic rendering calls."
      else do

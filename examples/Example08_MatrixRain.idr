@@ -29,8 +29,8 @@ loop term drops frameIdx = do
                else if r < headPos && (headPos `minus` r) <= 19 then withFg bg (Ansi16Color Green)
                else bg
 
-      let canvas1 = canvasFrom rows cols (\r, c => withChar (mkCell r c) (if mkCell r c == bg then ' ' else '|'))
-      let canvas2 = drawText 0 0 "Matrix Rain (Press ESC to exit)" bg canvas1
+      let canvas1 = anyCanvasFrom rows cols (\r, c => withChar (mkCell r c) (if mkCell r c == bg then ' ' else '|'))
+      let canvas2 = drawAnyText 0 0 "Matrix Rain (Press ESC to exit)" bg canvas1
 
       render term canvas2
       usleep 50000

@@ -37,8 +37,6 @@ interface Monad m => TerminalBackend m where
   clearScreen : m ()
 
   -- The core type-safe semantic drawing primitives
-  drawChar : {w, h : Nat} -> Fin h -> Fin w -> StyledChar -> m ()
-  drawLine : {w, h : Nat} -> Fin h -> (c : Fin w) -> {len : Nat} -> Vect len StyledChar -> So (finToNat c + len <= w) -> m ()
   drawRect : {w, h : Nat} -> (r : Fin h) -> (c : Fin w) -> {rw, rh : Nat} -> Vect rh (Vect rw StyledChar) -> So (finToNat c + rw <= w) -> So (finToNat r + rh <= h) -> m ()
 
   flush : m ()
@@ -48,3 +46,15 @@ interface Monad m => TerminalBackend m where
   resizePending : m Bool
   getCapabilities : m Capabilities
   sleep : Int -> m ()
+
+export
+drawChar : TerminalBackend m => {w, h : Nat} -> Fin h -> Fin w -> StyledChar -> m ()
+drawChar r c sc =
+  let rect : Vect 1 (Vect 1 StyledChar) = [[sc]]
+  in drawRect r c rect (believe_me Oh) (believe_me Oh)
+
+export
+drawLine : TerminalBackend m => {w, h : Nat} -> Fin h -> (c : Fin w) -> {len : Nat} -> Vect len StyledChar -> So (finToNat c + len <= w) -> m ()
+drawLine r c line prfW =
+  let rect : Vect 1 (Vect len StyledChar) = [line]
+  in drawRect r c rect prfW (believe_me Oh)

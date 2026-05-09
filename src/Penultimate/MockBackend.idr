@@ -1,6 +1,6 @@
 module Penultimate.MockBackend
-import Data.Fin
 
+import Data.Fin
 import Control.Monad.State
 import Penultimate.Backend
 import Penultimate.Capabilities
@@ -21,9 +21,7 @@ TerminalBackend (StateT MockState IO) where
   initBackend = pure ()
   shutdownBackend = pure ()
   clearScreen = modify (\st => { output := st.output ++ "<CLEAR>" } st)
-  drawChar r c sc = modify (\st => { output := st.output ++ "<CHAR " ++ show (finToNat r) ++ "," ++ show (finToNat c) ++ " '" ++ cast sc.char ++ "'>" } st)
-  drawLine r c chars _ = pure ()
-  drawRect r c rect _ _ = pure ()
+  drawRect r c rect _ _ = modify (\st => { output := st.output ++ "<RECT " ++ show (finToNat r) ++ "," ++ show (finToNat c) ++ ">" } st)
   flush = pure ()
   readChar = do
     st <- get

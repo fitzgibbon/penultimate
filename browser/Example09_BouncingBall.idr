@@ -27,10 +27,10 @@ loop term ball = do
 
       let ballCell = withChar (withFg bg (Ansi16Color BrightCyan)) 'O'
 
-      let canvas1 = emptyCanvas rows cols bg
-      let canvas2 = drawRect defaultBorder 0 0 rows cols (withFg bg (Ansi16Color BrightBlue)) canvas1
-      let canvas3 = setCell (cast ball.y) (cast ball.x) ballCell canvas2
-      let canvas4 = drawText 0 2 " Bouncing Ball (Press ESC) " bg canvas3
+      let canvas1 = emptyAnyCanvas rows cols bg
+      let canvas2 = drawAnyRect defaultBorder 0 0 rows cols (withFg bg (Ansi16Color BrightBlue)) canvas1
+      let canvas3 = setAnyCell (cast ball.y) (cast ball.x) ballCell canvas2
+      let canvas4 = drawAnyText 0 2 " Bouncing Ball (Press ESC) " bg canvas3
 
       render term canvas4
       sleep 30

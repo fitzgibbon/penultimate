@@ -1,5 +1,5 @@
 package penultimate-browser
-depends = base
+depends = base, penultimate
 modules = Example01_HelloWorld
         , Example02_Colors
         , Example03_InputEcho

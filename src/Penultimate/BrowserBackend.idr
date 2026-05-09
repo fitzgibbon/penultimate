@@ -1,13 +1,13 @@
 module Penultimate.BrowserBackend
 
 import Data.Fin
+import Data.Vect
+import Data.So
 import Penultimate.Backend
 import Penultimate.Capabilities
 import Penultimate.Ansi
 import Penultimate.Color
 import Data.String
-import Data.Vect
-import Data.So
 
 %foreign "javascript:lambda: () => window.penultimate_readChar()"
 prim__readChar : PrimIO Char
@@ -64,19 +64,31 @@ colorToCSS : Color -> String
 colorToCSS c = case colorToRGB c of
   MkRGB r g b => "#" ++ toHex (channelValue r) ++ toHex (channelValue g) ++ toHex (channelValue b)
 
+drawRectDOM : Nat -> Nat -> List (List StyledChar) -> IO ()
+drawRectDOM _ _ [] = pure ()
+drawRectDOM r c (line :: rest) = do
+  let emitChar : Nat -> StyledChar -> IO ()
+      emitChar colOffset sc = do
+        let fgCSS = colorToCSS sc.style.fgStyle
+        let bgCSS = colorToCSS sc.style.bgStyle
+        primIO (prim__drawCharDOM (cast r) (cast (c + colOffset)) fgCSS bgCSS (singleton sc.char))
+
+  -- Create indices
+  let goLine : Nat -> List StyledChar -> IO ()
+      goLine _ [] = pure ()
+      goLine off (x :: xs) = do
+        emitChar off x
+        goLine (off + 1) xs
+
+  goLine 0 line
+  drawRectDOM (r + 1) c rest
+
 export
 TerminalBackend IO where
   initBackend = primIO prim__initDOM
   shutdownBackend = primIO prim__shutdownDOM
   clearScreen = primIO prim__clearDOM
-  drawChar r c sc = do
-    let rInt = cast (finToNat r)
-    let cInt = cast (finToNat c)
-    let fgCSS = colorToCSS sc.style.fgStyle
-    let bgCSS = colorToCSS sc.style.bgStyle
-    primIO (prim__drawCharDOM rInt cInt fgCSS bgCSS (cast sc.char))
-  drawLine r c chars _ = pure ()
-  drawRect r c rect _ _ = pure ()
+  drawRect r c rect _ _ = drawRectDOM (finToNat r) (finToNat c) (map toList (toList rect))
   flush = pure ()
   readChar = safeReadChar
   pollChar = safePollChar

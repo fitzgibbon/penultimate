@@ -22,7 +22,7 @@ record RenderContext (m : Type -> Type) where
   policy : RenderPolicy
   tier : ColorTier
   sizeRef : IORef (Nat, Nat)
-  lastCanvasRef : IORef (Maybe Canvas)
+  lastCanvasRef : IORef (Maybe AnyCanvas)
 
 export
 resolveCell : ColorTier -> Cell -> Cell
@@ -32,11 +32,11 @@ resolveCell tier cell =
    in { fg := fg, bg := bg } cell
 
 export
-resolveCanvas : ColorTier -> Canvas -> Canvas
-resolveCanvas tier (MkCanvas width height rows) =
+resolveCanvas : ColorTier -> AnyCanvas -> AnyCanvas
+resolveCanvas tier (MkAnyCanvas width height (MkCanvas rows)) =
   let resolveRow : Vect width Cell -> Vect width Cell
       resolveRow rowCells = map (resolveCell tier) rowCells
-   in MkCanvas width height (map resolveRow rows)
+   in MkAnyCanvas width height (MkCanvas (map resolveRow rows))
 
 export
 initRenderContext : TerminalBackend m => HasIO m => RenderPolicy -> m (RenderContext m)
@@ -74,7 +74,7 @@ styledFromCell : Cell -> StyledChar
 styledFromCell cell = MkStyledChar cell.ch (styleFromCell cell)
 
 export
-renderCanvas : TerminalBackend m => HasIO m => RenderContext m -> Canvas -> m ()
+renderCanvas : TerminalBackend m => HasIO m => RenderContext m -> AnyCanvas -> m ()
 renderCanvas ctx canvas = do
   resized <- refreshSizeIfNeeded ctx
   lastCanvas <- liftIO (readIORef ctx.lastCanvasRef)
@@ -90,16 +90,16 @@ renderCanvas ctx canvas = do
        clearScreen
      else pure ()
 
-  let (MkCanvas currW currH currRs) = resolved
+  let (MkAnyCanvas currW currH (MkCanvas currRs)) = resolved
 
-  let mprev : Maybe Canvas = case lastCanvas of
+  let mprev : Maybe AnyCanvas = case lastCanvas of
         Nothing => Nothing
         Just p => if currW == p.width && currH == p.height then Just p else Nothing
 
-  let (MkCanvas w h rows) = resolved
+  let (MkAnyCanvas w h (MkCanvas rows)) = resolved
   let prevRows = case mprev of
         Nothing => replicate h (replicate w defaultCell)
-        Just (MkCanvas pw ph prows) => believe_me prows
+        Just (MkAnyCanvas pw ph (MkCanvas prows)) => believe_me prows
 
   let goCol : Fin h -> Nat -> m ()
       goCol finR c = case natToFin c w of

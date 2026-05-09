@@ -1,8 +1,8 @@
 module Penultimate.RecordingBackend
+
 import Data.Fin
 import Data.Vect
 import Data.So
-
 import Penultimate.Backend
 import Penultimate.Capabilities
 import Penultimate.Ansi
@@ -61,16 +61,6 @@ export
   initBackend = MkRecording (\_, _ => initBackend)
   shutdownBackend = MkRecording (\_, _ => shutdownBackend)
   clearScreen = MkRecording (\_, _ => clearScreen)
-  drawChar r c sc = MkRecording (\fH, startT => do
-    now <- liftIO getMonotonicTimeMs
-    let elapsedMs = now - startT
-    let elapsedSec = cast {to=Double} elapsedMs / 1000.0
-    let ansiPayload = Penultimate.Ansi.cursorTo (finToNat r + 1) (finToNat c + 1) ++ styleSeq sc.style ++ cast sc.char
-    let jsonLine = "[ " ++ show elapsedSec ++ ", \"o\", \"" ++ escapeStr ansiPayload ++ "\" ]\n"
-    ignore $ liftIO (fPutStr fH jsonLine)
-    ignore $ liftIO (fflush fH)
-    drawChar r c sc)
-  drawLine r c chars prf = MkRecording (\_, _ => drawLine r c chars prf)
   drawRect r c rect prfW prfH = MkRecording (\_, _ => drawRect r c rect prfW prfH)
   flush = MkRecording (\_, _ => flush)
   readChar = MkRecording (\_, _ => readChar)

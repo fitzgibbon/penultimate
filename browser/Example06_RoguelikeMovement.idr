@@ -20,10 +20,10 @@ loop term px py = do
   let playerCell = withChar (withFg bg (Ansi16Color BrightMagenta)) '@'
   let wallCell = withChar (withFg bg (Ansi16Color BrightBlack)) '#'
 
-  let canvas1 = emptyCanvas rows cols bg
-  let canvas2 = drawRect defaultBorder 0 0 rows cols wallCell canvas1
-  let canvas3 = setCell py px playerCell canvas2
-  let canvas4 = drawText (rows `minus` 1) 2 " WASD to move, ESC to exit " bg canvas3
+  let canvas1 = emptyAnyCanvas rows cols bg
+  let canvas2 = drawAnyRect defaultBorder 0 0 rows cols wallCell canvas1
+  let canvas3 = setAnyCell py px playerCell canvas2
+  let canvas4 = drawAnyText (rows `minus` 1) 2 " WASD to move, ESC to exit " bg canvas3
 
   render term canvas4
 

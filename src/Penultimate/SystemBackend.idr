@@ -1,8 +1,8 @@
 module Penultimate.SystemBackend
+
 import Data.Fin
 import Data.Vect
 import Data.So
-
 import Penultimate.Backend
 import Penultimate.Capabilities
 import Penultimate.Input
@@ -62,6 +62,15 @@ querySize = do
       let fallbackCols = fromMaybe 80 envCols
       pure (fallbackRows, fallbackCols)
 
+drawRectSystem : Nat -> Nat -> List (List StyledChar) -> IO ()
+drawRectSystem _ _ [] = pure ()
+drawRectSystem r c (line :: rest) = do
+  putStr (Penultimate.Ansi.cursorTo (r + 1) (c + 1))
+  let emitChar : StyledChar -> IO ()
+      emitChar sc = putStr (styleSeq sc.style ++ singleton sc.char)
+  sequence_ (map emitChar line)
+  drawRectSystem (r + 1) c rest
+
 export
 TerminalBackend IO where
   initBackend = do
@@ -74,9 +83,7 @@ TerminalBackend IO where
     putStr Penultimate.Ansi.resetAttrs
     putStr Penultimate.Ansi.showCursor
   clearScreen = putStr Penultimate.Ansi.clearScreen
-  drawChar r c sc = putStr (Penultimate.Ansi.cursorTo (finToNat r + 1) (finToNat c + 1) ++ styleSeq sc.style ++ cast sc.char)
-  drawLine r c chars _ = pure () -- Add run-length optimization here later if desired
-  drawRect r c rect _ _ = pure ()
+  drawRect r c rect _ _ = drawRectSystem (finToNat r) (finToNat c) (map toList (toList rect))
   flush = fflush stdout
   readChar = getChar
   pollChar = do
