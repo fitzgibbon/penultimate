@@ -18,7 +18,7 @@ jobs:
       run: |
         nix develop --command sh -c "export IDRIS2_PREFIX=\$PWD/local_install && idris2 --install penultimate.ipkg && idris2 --build tests/native.ipkg && idris2 --build tests/browser.ipkg"
         nix develop --command sh -c "tests/build/exec/tests_native"
-        nix develop --command sh -c "node tests/build/exec/tests_browser.js"
+        nix develop --command sh -c "node tests/build/exec/tests_browserjs"
     - name: Build Examples
       run: |
         nix develop --command sh -c "export IDRIS2_PREFIX=\$PWD/local_install && idris2 --build examples/console.ipkg && idris2 --build examples/web.ipkg"
