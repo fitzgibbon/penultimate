@@ -1,0 +1,1042 @@
+class IdrisError extends Error { }
+
+function __prim_js2idris_array(x){
+  let acc = { h:0 };
+
+  for (let i = x.length-1; i>=0; i--) {
+      acc = { a1:x[i], a2:acc };
+  }
+  return acc;
+}
+
+function __prim_idris2js_array(x){
+  const result = Array();
+  while (x.h === undefined) {
+    result.push(x.a1); x = x.a2;
+  }
+  return result;
+}
+
+function __lazy(thunk) {
+  let res;
+  return function () {
+    if (thunk === undefined) return res;
+    res = thunk();
+    thunk = undefined;
+    return res;
+  };
+};
+
+function __prim_stringIteratorNew(_str) {
+  return 0
+}
+
+function __prim_stringIteratorToString(_, str, it, f) {
+  return f(str.slice(it))
+}
+
+function __prim_stringIteratorNext(str, it) {
+  if (it >= str.length)
+    return {h: 0};
+  else
+    return {a1: str.charAt(it), a2: it + 1};
+}
+
+function __tailRec(f,ini) {
+  let obj = ini;
+  while(true){
+    switch(obj.h){
+      case 0: return obj.a1;
+      default: obj = f(obj);
+    }
+  }
+}
+
+const _idrisworld = Symbol('idrisworld')
+
+const _crashExp = x=>{throw new IdrisError(x)}
+
+const _bigIntOfString = s=> {
+  try {
+    const idx = s.indexOf('.')
+    return idx === -1 ? BigInt(s) : BigInt(s.slice(0, idx))
+  } catch (e) { return 0n }
+}
+
+const _numberOfString = s=> {
+  try {
+    const res = Number(s);
+    return isNaN(res) ? 0 : res;
+  } catch (e) { return 0 }
+}
+
+const _intOfString = s=> Math.trunc(_numberOfString(s))
+
+const _truncToChar = x=> String.fromCodePoint(
+  (x >= 0 && x <= 55295) || (x >= 57344 && x <= 1114111) ? x : 0
+)
+
+// Int8
+const _truncInt8 = x => {
+  const res = x & 0xff;
+  return res >= 0x80 ? res - 0x100 : res;
+}
+
+const _truncBigInt8 = x => Number(BigInt.asIntN(8, x))
+
+// Euclidian Division
+const _div = (a,b) => {
+  const q = Math.trunc(a / b)
+  const r = a % b
+  return r < 0 ? (b > 0 ? q - 1 : q + 1) : q
+}
+
+const _divBigInt = (a,b) => {
+  const q = a / b
+  const r = a % b
+  return r < 0n ? (b > 0n ? q - 1n : q + 1n) : q
+}
+
+// Euclidian Modulo
+const _mod = (a,b) => {
+  const r = a % b
+  return r < 0 ? (b > 0 ? r + b : r - b) : r
+}
+
+const _modBigInt = (a,b) => {
+  const r = a % b
+  return r < 0n ? (b > 0n ? r + b : r - b) : r
+}
+
+const _add8s = (a,b) => _truncInt8(a + b)
+const _sub8s = (a,b) => _truncInt8(a - b)
+const _mul8s = (a,b) => _truncInt8(a * b)
+const _div8s = (a,b) => _truncInt8(_div(a,b))
+const _shl8s = (a,b) => _truncInt8(a << b)
+const _shr8s = (a,b) => _truncInt8(a >> b)
+
+// Int16
+const _truncInt16 = x => {
+  const res = x & 0xffff;
+  return res >= 0x8000 ? res - 0x10000 : res;
+}
+
+const _truncBigInt16 = x => Number(BigInt.asIntN(16, x))
+
+const _add16s = (a,b) => _truncInt16(a + b)
+const _sub16s = (a,b) => _truncInt16(a - b)
+const _mul16s = (a,b) => _truncInt16(a * b)
+const _div16s = (a,b) => _truncInt16(_div(a,b))
+const _shl16s = (a,b) => _truncInt16(a << b)
+const _shr16s = (a,b) => _truncInt16(a >> b)
+
+//Int32
+const _truncInt32 = x => x & 0xffffffff
+
+const _truncBigInt32 = x => Number(BigInt.asIntN(32, x))
+
+const _add32s = (a,b) => _truncInt32(a + b)
+const _sub32s = (a,b) => _truncInt32(a - b)
+const _div32s = (a,b) => _truncInt32(_div(a,b))
+
+const _mul32s = (a,b) => {
+  const res = a * b;
+  if (res <= Number.MIN_SAFE_INTEGER || res >= Number.MAX_SAFE_INTEGER) {
+    return _truncInt32((a & 0xffff) * b + (b & 0xffff) * (a & 0xffff0000))
+  } else {
+    return _truncInt32(res)
+  }
+}
+
+//Int64
+const _truncBigInt64 = x => BigInt.asIntN(64, x)
+
+const _add64s = (a,b) => _truncBigInt64(a + b)
+const _sub64s = (a,b) => _truncBigInt64(a - b)
+const _mul64s = (a,b) => _truncBigInt64(a * b)
+const _shl64s = (a,b) => _truncBigInt64(a << b)
+const _div64s = (a,b) => _truncBigInt64(_divBigInt(a,b))
+const _shr64s = (a,b) => _truncBigInt64(a >> b)
+
+//Bits8
+const _truncUInt8 = x => x & 0xff
+
+const _truncUBigInt8 = x => Number(BigInt.asUintN(8, x))
+
+const _add8u = (a,b) => (a + b) & 0xff
+const _sub8u = (a,b) => (a - b) & 0xff
+const _mul8u = (a,b) => (a * b) & 0xff
+const _div8u = (a,b) => Math.trunc(a / b)
+const _shl8u = (a,b) => (a << b) & 0xff
+const _shr8u = (a,b) => (a >> b) & 0xff
+
+//Bits16
+const _truncUInt16 = x => x & 0xffff
+
+const _truncUBigInt16 = x => Number(BigInt.asUintN(16, x))
+
+const _add16u = (a,b) => (a + b) & 0xffff
+const _sub16u = (a,b) => (a - b) & 0xffff
+const _mul16u = (a,b) => (a * b) & 0xffff
+const _div16u = (a,b) => Math.trunc(a / b)
+const _shl16u = (a,b) => (a << b) & 0xffff
+const _shr16u = (a,b) => (a >> b) & 0xffff
+
+//Bits32
+const _truncUBigInt32 = x => Number(BigInt.asUintN(32, x))
+
+const _truncUInt32 = x => {
+  const res = x & -1;
+  return res < 0 ? res + 0x100000000 : res;
+}
+
+const _add32u = (a,b) => _truncUInt32(a + b)
+const _sub32u = (a,b) => _truncUInt32(a - b)
+const _mul32u = (a,b) => _truncUInt32(_mul32s(a,b))
+const _div32u = (a,b) => Math.trunc(a / b)
+
+const _shl32u = (a,b) => _truncUInt32(a << b)
+const _shr32u = (a,b) => _truncUInt32(a <= 0x7fffffff ? a >> b : (b == 0 ? a : (a >> b) ^ ((-0x80000000) >> (b-1))))
+const _and32u = (a,b) => _truncUInt32(a & b)
+const _or32u = (a,b)  => _truncUInt32(a | b)
+const _xor32u = (a,b) => _truncUInt32(a ^ b)
+
+//Bits64
+const _truncUBigInt64 = x => BigInt.asUintN(64, x)
+
+const _add64u = (a,b) => BigInt.asUintN(64, a + b)
+const _mul64u = (a,b) => BigInt.asUintN(64, a * b)
+const _div64u = (a,b) => a / b
+const _shl64u = (a,b) => BigInt.asUintN(64, a << b)
+const _shr64u = (a,b) => BigInt.asUintN(64, a >> b)
+const _sub64u = (a,b) => BigInt.asUintN(64, a - b)
+
+//String
+const _strReverse = x => x.split('').reverse().join('')
+
+const _substr = (o,l,x) => x.slice(o, o + l)
+
+const Penultimate_DOM_setTextContent = ((el, txt)=>el.textContent = txt);
+const Penultimate_DOM_setStyle = ((el, fg, bg, fontWeight, textDecoration, fontStyle)=>{ el.style.color = fg; el.style.backgroundColor = bg; el.style.fontWeight = fontWeight; el.style.textDecoration = textDecoration; el.style.fontStyle = fontStyle; });
+const Penultimate_DOM_getSpan = ((r, c)=>{ return document.getElementById('cell-' + r + '-' + c); });
+const Penultimate_DOM_getRootElement = (()=>document.getElementById('penultimate-root'));
+const Penultimate_DOM_createSpan = ((r, c)=>{ let el = document.createElement('span'); el.id = 'cell-' + r + '-' + c; return el; });
+const Penultimate_DOM_createBr = (()=>document.createElement('br'));
+const Penultimate_DOM_clearElement = ((root)=>root.innerHTML = '');
+const Penultimate_DOM_appendChild = ((root, el)=>root.appendChild(el));
+/* {$tcOpt:1} */
+function x24tcOpt_1($0) {
+ switch($0.a3.h) {
+  case 0: /* nil */ return {h: 0 /* {TcDone:1} */, a1: $0.a2};
+  case undefined: /* cons */ return {h: 1 /* {TcContinue1:1} */, a1: $0.a1, a2: $0.a1($0.a2)($0.a3.a1), a3: $0.a3.a2};
+ }
+}
+
+/* Prelude.Types.foldl */
+function Prelude_Types_foldl_Foldable_List($0, $1, $2) {
+ return __tailRec(x24tcOpt_1, {h: 1 /* {TcContinue1:1} */, a1: $0, a2: $1, a3: $2});
+}
+
+/* {$tcOpt:2} */
+function x24tcOpt_2($0) {
+ switch($0.a3.h) {
+  case undefined: /* cons */ return {h: 1 /* {TcContinue2:1} */, a1: {a1: $0.a1, a2: $0.a2($0.a3.a1)}, a2: $0.a2, a3: $0.a3.a2};
+  case 0: /* nil */ return {h: 0 /* {TcDone:2} */, a1: Prelude_Types_SnocList_x3cx3ex3e($0.a1, {h: 0})};
+ }
+}
+
+/* Prelude.Types.List.mapAppend : SnocList b -> (a -> b) -> List a -> List b */
+function Prelude_Types_List_mapAppend($0, $1, $2) {
+ return __tailRec(x24tcOpt_2, {h: 1 /* {TcContinue2:1} */, a1: $0, a2: $1, a3: $2});
+}
+
+/* {$tcOpt:3} */
+function x24tcOpt_3($0) {
+ switch($0.a3.h) {
+  case 0: /* nil */ return {h: 0 /* {TcDone:3} */, a1: Prelude_Types_List_reverse($0.a2)};
+  case undefined: /* cons */ return {h: 1 /* {TcContinue3:1} */, a1: $0.a1, a2: Prelude_Types_List_reverseOnto($0.a2, $0.a1($0.a3.a1)), a3: $0.a3.a2};
+ }
+}
+
+/* Prelude.Types.listBindOnto : (a -> List b) -> List b -> List a -> List b */
+function Prelude_Types_listBindOnto($0, $1, $2) {
+ return __tailRec(x24tcOpt_3, {h: 1 /* {TcContinue3:1} */, a1: $0, a2: $1, a3: $2});
+}
+
+/* {$tcOpt:4} */
+function x24tcOpt_4($0) {
+ switch($0.a2.h) {
+  case 0: /* nil */ return {h: 0 /* {TcDone:4} */, a1: $0.a1};
+  case undefined: /* cons */ return {h: 1 /* {TcContinue4:1} */, a1: {a1: $0.a2.a1, a2: $0.a1}, a2: $0.a2.a2};
+ }
+}
+
+/* Prelude.Types.List.reverseOnto : List a -> List a -> List a */
+function Prelude_Types_List_reverseOnto($0, $1) {
+ return __tailRec(x24tcOpt_4, {h: 1 /* {TcContinue4:1} */, a1: $0, a2: $1});
+}
+
+/* {$tcOpt:5} */
+function x24tcOpt_5($0) {
+ switch($0.a1) {
+  case 0n: return {h: 0 /* {TcDone:5} */, a1: $0.a2.a1};
+  default: {
+   const $5 = ($0.a1-1n);
+   return {h: 1 /* {TcContinue5:1} */, a1: $5, a2: $0.a2.a2};
+  }
+ }
+}
+
+/* Data.Vect.index : Fin len -> Vect len elem -> elem */
+function Data_Vect_index($0, $1) {
+ return __tailRec(x24tcOpt_5, {h: 1 /* {TcContinue5:1} */, a1: $0, a2: $1});
+}
+
+/* {$tcOpt:6} */
+function x24tcOpt_6($0) {
+ switch($0.a1.h) {
+  case 0: /* nil */ return {h: 0 /* {TcDone:6} */, a1: $0.a2};
+  case undefined: /* cons */ return {h: 1 /* {TcContinue6:1} */, a1: $0.a1.a1, a2: {a1: $0.a1.a2, a2: $0.a2}};
+ }
+}
+
+/* Prelude.Types.SnocList.(<>>) : SnocList a -> List a -> List a */
+function Prelude_Types_SnocList_x3cx3ex3e($0, $1) {
+ return __tailRec(x24tcOpt_6, {h: 1 /* {TcContinue6:1} */, a1: $0, a2: $1});
+}
+
+/* {__mainExpression:0} */
+function __mainExpression_0() {
+ return PrimIO_unsafePerformIO($2 => Web_main($2));
+}
+
+/* {csegen:8} */
+const csegen_8 = __lazy(function () {
+ const $a = b => a => $b => $c => $d => {
+  const $e = $b($d);
+  const $11 = $c($d);
+  return $e($11);
+ };
+ return {a1: b => a => func => $1 => $2 => Prelude_IO_map_Functor_IO(func, $1, $2), a2: a => $8 => $9 => $8, a3: $a};
+});
+
+/* {csegen:23} */
+const csegen_23 = __lazy(function () {
+ return {a1: acc => elem => func => init => input => Prelude_Types_foldr_Foldable_List(func, init, input), a2: elem => acc => func => init => input => Prelude_Types_foldl_Foldable_List(func, init, input), a3: elem => $b => Prelude_Types_null_Foldable_List($b), a4: elem => acc => m => $f => funcM => init => input => Prelude_Types_foldlM_Foldable_List($f, funcM, init, input), a5: elem => $16 => $16, a6: a => m => $18 => f => $19 => Prelude_Types_foldMap_Foldable_List($18, f, $19)};
+});
+
+/* {csegen:34} */
+const csegen_34 = __lazy(function () {
+ return {a1: {a1: b => a => func => $2 => Prelude_Types_List_mapAppend({h: 0}, func, $2), a2: a => $8 => Prelude_Types_pure_Applicative_List($8), a3: b => a => $c => $d => Prelude_Types_x3cx2ax3e_Applicative_List($c, $d)}, a2: a => ({h: 0}), a3: a => $13 => $14 => Prelude_Types_List_tailRecAppend($13, $14())};
+});
+
+/* prim__sub_Integer : Integer -> Integer -> Integer */
+function prim__sub_Integer($0, $1) {
+ return ($0-$1);
+}
+
+/* Web.main : IO () */
+function Web_main($0) {
+ const $1 = Penultimate_DOM_initDOM(10n, 10n, $0);
+ const $6 = {a1: ' ', a2: {h: 0 /* Named */, a1: 7n}, a3: {h: 0 /* Named */, a1: 4n}, a4: Penultimate_Core_defaultAttr()};
+ const $e = Penultimate_DOM_drawRect_Surface_DOMSurface_IO(10n, 10n, $1, 2n, 2n, 5n, 5n, $6)($0);
+ const $1a = {a1: 'X', a2: {h: 0 /* Named */, a1: 1n}, a3: {h: 0 /* Named */, a1: 4n}, a4: {a1: 1, a2: 0, a3: 0}};
+ const $24 = Penultimate_DOM_drawRect_Surface_DOMSurface_IO(10n, 10n, $e, 4n, 4n, 1n, 1n, $1a)($0);
+ return undefined;
+}
+
+/* Penultimate.DOM.case block in case block in drawRect */
+function Penultimate_DOM_case__casex20blockx20inx20drawRect_12276($0, $1, $2, $3, $4, $5, $6, $7, $8, $9, $a, $b, $c, $d, $e, $f, $10, $11, $12) {
+ switch($12.h) {
+  case 0: /* nothing */ return $14 => undefined;
+  case undefined: /* just */ {
+   const $15 = Data_Vect_index($12.a1, $10);
+   return $19 => {
+    switch(Penultimate_Core_x3dx3d_Eq_StyledChar($15, $3)) {
+     case 1: return undefined;
+     case 0: {
+      const $1e = Penultimate_DOM_getSpan($e, $11)($19);
+      const $24 = Penultimate_DOM_attrToCSS($3.a4);
+      const $29 = Penultimate_DOM_setStyle($1e, Penultimate_DOM_colorToCSS($3.a2), Penultimate_DOM_colorToCSS($3.a3), $24.a1, $24.a2.a1, $24.a2.a2)($19);
+      return Penultimate_DOM_setTextContent($1e, Data_String_singleton($3.a1))($19);
+     }
+    }
+   };
+  }
+ }
+}
+
+/* Penultimate.DOM.case block in drawRect */
+function Penultimate_DOM_case__drawRect_12187($0, $1, $2, $3, $4, $5, $6, $7, $8, $9, $a, $b, $c, $d, $e, $f) {
+ switch($f.h) {
+  case 0: /* nothing */ return $11 => undefined;
+  case undefined: /* just */ {
+   const $12 = Data_Vect_index($f.a1, $2);
+   return Prelude_Interfaces_for_(csegen_8(), csegen_23(), $d, i => Penultimate_DOM_case__casex20blockx20inx20drawRect_12276($0, $1, $2, $3, $4, $5, $6, $7, $8, $9, $a, $b, $c, $d, $e, $f.a1, $12, i, Data_Fin_natToFin(i, $0)));
+  }
+ }
+}
+
+/* Penultimate.DOM.drawRect */
+function Penultimate_DOM_drawRect_Surface_DOMSurface_IO($0, $1, $2, $3, $4, $5, $6, $7) {
+ const $8 = Prelude_Types_listBind(Prelude_Types_rangeFromTo_Range_Nat(0n, Prelude_Types_prim__integerToNat(($1-1n))), j => Prelude_Types_listBind(Prelude_Interfaces_guard(csegen_34(), Prelude_Types_x3ex3d_Ord_Nat(j, $4)), $1d => Prelude_Types_listBind(Prelude_Interfaces_guard(csegen_34(), Prelude_Types_x3c_Ord_Nat(j, ($4+$6))), $2a => Prelude_Types_pure_Applicative_List(j))));
+ const $2d = Prelude_Types_listBind(Prelude_Types_rangeFromTo_Range_Nat(0n, Prelude_Types_prim__integerToNat(($0-1n))), i => Prelude_Types_listBind(Prelude_Interfaces_guard(csegen_34(), Prelude_Types_x3ex3d_Ord_Nat(i, $3)), $42 => Prelude_Types_listBind(Prelude_Interfaces_guard(csegen_34(), Prelude_Types_x3c_Ord_Nat(i, ($3+$5))), $4f => Prelude_Types_pure_Applicative_List(i))));
+ return $52 => {
+  const $53 = Prelude_Interfaces_for_(csegen_8(), csegen_23(), $8, j => Penultimate_DOM_case__drawRect_12187($0, $1, $2, $7, $4, $6, $3, $5, $3, $4, $5, $6, $8, $2d, j, Data_Fin_natToFin(j, $1)))($52);
+  const $73 = row => {
+   const $75 = r => i => {
+    const $76 = Data_Fin_natToFin(i, $0);
+    switch($76.h) {
+     case 0: /* nothing */ return r;
+     case undefined: /* just */ return Data_Vect_updateAt($76.a1, $7d => $7, r);
+    }
+   };
+   return Prelude_Types_foldl_Foldable_List($75, row, $2d);
+  };
+  const $83 = g => j => {
+   const $84 = Data_Fin_natToFin(j, $1);
+   switch($84.h) {
+    case 0: /* nothing */ return g;
+    case undefined: /* just */ return Data_Vect_updateAt($84.a1, $73, g);
+   }
+  };
+  const $81 = Prelude_Types_foldl_Foldable_List($83, $2, $8);
+  const $72 = () => $8e => $81;
+  const $71 = $72();
+  return $71($52);
+ };
+}
+
+/* Penultimate.DOM.initDOM : IO (DOMSurface w h) */
+function Penultimate_DOM_initDOM($0, $1, $2) {
+ const $3 = Penultimate_DOM_getRootElement()($2);
+ const $7 = Penultimate_DOM_clearElement($3)($2);
+ const $1b = r => $1c => {
+  const $2c = c => $2d => {
+   const $2e = Penultimate_DOM_createSpan(r, c)($2d);
+   const $34 = Penultimate_DOM_attrToCSS(Penultimate_Core_defaultAttr());
+   const $39 = Penultimate_DOM_setStyle($2e, Penultimate_DOM_colorToCSS({h: 0 /* Named */, a1: 7n}), Penultimate_DOM_colorToCSS({h: 0 /* Named */, a1: 0n}), $34.a1, $34.a2.a1, $34.a2.a2)($2d);
+   const $49 = Penultimate_DOM_setTextContent($2e, ' ')($2d);
+   return Penultimate_DOM_appendChild($3, $2e)($2d);
+  };
+  const $1e = Prelude_Interfaces_for_(csegen_8(), csegen_23(), Prelude_Types_rangeFromTo_Range_Nat(0n, Prelude_Types_prim__integerToNat(($0-1n))), $2c);
+  const $1d = $1e($1c);
+  const $55 = Penultimate_DOM_createBr()($1c);
+  return Penultimate_DOM_appendChild($3, $55)($1c);
+ };
+ const $d = Prelude_Interfaces_for_(csegen_8(), csegen_23(), Prelude_Types_rangeFromTo_Range_Nat(0n, Prelude_Types_prim__integerToNat(($1-1n))), $1b);
+ const $c = $d($2);
+ return Penultimate_DOM_emptyDOM($0, $1);
+}
+
+/* Penultimate.DOM.emptyDOM : DOMSurface w h */
+function Penultimate_DOM_emptyDOM($0, $1) {
+ return Data_Vect_replicate($1, Data_Vect_replicate($0, Penultimate_Core_defaultStyledChar()));
+}
+
+/* Penultimate.DOM.colorToCSS : Color -> String */
+function Penultimate_DOM_colorToCSS($0) {
+ switch($0.h) {
+  case 0: /* Named */ {
+   switch($0.a1) {
+    case 0n: return 'black';
+    default: {
+     const $3 = ($0.a1-1n);
+     switch($3) {
+      case 0n: return 'red';
+      default: {
+       const $7 = ($3-1n);
+       switch($7) {
+        case 0n: return 'green';
+        default: {
+         const $b = ($7-1n);
+         switch($b) {
+          case 0n: return 'yellow';
+          default: {
+           const $f = ($b-1n);
+           switch($f) {
+            case 0n: return 'blue';
+            default: {
+             const $13 = ($f-1n);
+             switch($13) {
+              case 0n: return 'magenta';
+              default: {
+               const $17 = ($13-1n);
+               switch($17) {
+                case 0n: return 'cyan';
+                default: {
+                 const $1b = ($17-1n);
+                 switch($1b) {
+                  case 0n: return 'white';
+                  default: {
+                   const $1f = ($1b-1n);
+                   switch($1f) {
+                    case 0n: return 'gray';
+                    default: {
+                     const $23 = ($1f-1n);
+                     switch($23) {
+                      case 0n: return 'lightcoral';
+                      default: {
+                       const $27 = ($23-1n);
+                       switch($27) {
+                        case 0n: return 'lightgreen';
+                        default: {
+                         const $2b = ($27-1n);
+                         switch($2b) {
+                          case 0n: return 'lightyellow';
+                          default: {
+                           const $2f = ($2b-1n);
+                           switch($2f) {
+                            case 0n: return 'lightblue';
+                            default: {
+                             const $33 = ($2f-1n);
+                             switch($33) {
+                              case 0n: return 'lightpink';
+                              default: {
+                               const $37 = ($33-1n);
+                               switch($37) {
+                                case 0n: return 'lightcyan';
+                                default: {
+                                 const $3b = ($37-1n);
+                                 switch($3b) {
+                                  case 0n: return 'white';
+                                  default: return 'black';
+                                 }
+                                }
+                               }
+                              }
+                             }
+                            }
+                           }
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+  case 1: /* RGB */ return ('rgb('+(Prelude_Show_show_Show_Nat($0.a1)+(', '+(Prelude_Show_show_Show_Nat($0.a2)+(', '+(Prelude_Show_show_Show_Nat($0.a3)+')'))))));
+ }
+}
+
+/* Penultimate.DOM.attrToCSS : Attr -> (String, (String, String)) */
+function Penultimate_DOM_attrToCSS($0) {
+ let $2;
+ switch($0.a1) {
+  case 1: {
+   $2 = 'bold';
+   break;
+  }
+  case 0: {
+   $2 = 'normal';
+   break;
+  }
+ }
+ let $4;
+ switch($0.a2) {
+  case 1: {
+   $4 = 'underline';
+   break;
+  }
+  case 0: {
+   $4 = 'none';
+   break;
+  }
+ }
+ let $6;
+ switch($0.a3) {
+  case 1: {
+   $6 = 'italic';
+   break;
+  }
+  case 0: {
+   $6 = 'normal';
+   break;
+  }
+ }
+ return {a1: $2, a2: {a1: $4, a2: $6}};
+}
+
+/* Data.String.singleton : Char -> String */
+function Data_String_singleton($0) {
+ return ($0+'');
+}
+
+/* Data.Fin.natToFin : Nat -> (n : Nat) -> Maybe (Fin n) */
+function Data_Fin_natToFin($0, $1) {
+ const $2 = Data_Nat_isLT($0, $1);
+ switch($2.h) {
+  case 0: /* Yes */ return {a1: $0};
+  case 1: /* No */ return {h: 0};
+ }
+}
+
+/* Prelude.Basics.flip : (a -> b -> c) -> b -> a -> c */
+function Prelude_Basics_flip($0, $1, $2) {
+ return $0($2)($1);
+}
+
+/* Prelude.Types.rangeFromTo */
+function Prelude_Types_rangeFromTo_Range_Nat($0, $1) {
+ switch(Prelude_EqOrd_compare_Ord_Integer($0, $1)) {
+  case 0: return Prelude_Types_takeUntil($8 => Prelude_Types_x3ex3d_Ord_Nat($8, $1), Prelude_Types_countFrom($0, $10 => ($10+1n)));
+  case 1: return Prelude_Types_pure_Applicative_List($0);
+  case 2: return Prelude_Types_takeUntil($17 => Prelude_Types_x3cx3d_Ord_Nat($17, $1), Prelude_Types_countFrom($0, n => Prelude_Types_prim__integerToNat((n-1n))));
+ }
+}
+
+/* Prelude.Types.pure */
+function Prelude_Types_pure_Applicative_List($0) {
+ return {a1: $0, a2: {h: 0}};
+}
+
+/* Prelude.Types.null */
+function Prelude_Types_null_Foldable_List($0) {
+ switch($0.h) {
+  case 0: /* nil */ return 1;
+  case undefined: /* cons */ return 0;
+ }
+}
+
+/* Prelude.Types.foldr */
+function Prelude_Types_foldr_Foldable_List($0, $1, $2) {
+ switch($2.h) {
+  case 0: /* nil */ return $1;
+  case undefined: /* cons */ return $0($2.a1)(Prelude_Types_foldr_Foldable_List($0, $1, $2.a2));
+ }
+}
+
+/* Prelude.Types.foldlM */
+function Prelude_Types_foldlM_Foldable_List($0, $1, $2, $3) {
+ return Prelude_Types_foldl_Foldable_List(ma => b => $0.a2(undefined)(undefined)(ma)($f => Prelude_Basics_flip($1, b, $f)), $0.a1.a2(undefined)($2), $3);
+}
+
+/* Prelude.Types.foldMap */
+function Prelude_Types_foldMap_Foldable_List($0, $1, $2) {
+ return Prelude_Types_foldl_Foldable_List(acc => elem => $0.a1(acc)($1(elem)), $0.a2, $2);
+}
+
+/* Prelude.Types.>= */
+function Prelude_Types_x3ex3d_Ord_Nat($0, $1) {
+ return Prelude_EqOrd_x2fx3d_Eq_Ordering(Prelude_EqOrd_compare_Ord_Integer($0, $1), 0);
+}
+
+/* Prelude.Types.< */
+function Prelude_Types_x3c_Ord_Nat($0, $1) {
+ return Prelude_EqOrd_x3dx3d_Eq_Ordering(Prelude_EqOrd_compare_Ord_Integer($0, $1), 0);
+}
+
+/* Prelude.Types.<= */
+function Prelude_Types_x3cx3d_Ord_Nat($0, $1) {
+ return Prelude_EqOrd_x2fx3d_Eq_Ordering(Prelude_EqOrd_compare_Ord_Integer($0, $1), 2);
+}
+
+/* Prelude.Types.<*> */
+function Prelude_Types_x3cx2ax3e_Applicative_List($0, $1) {
+ return Prelude_Types_listBind($0, f => Prelude_Types_List_mapAppend({h: 0}, f, $1));
+}
+
+/* Prelude.Types.takeUntil : (n -> Bool) -> Stream n -> List n */
+function Prelude_Types_takeUntil($0, $1) {
+ switch($0($1.a1)) {
+  case 1: return {a1: $1.a1, a2: {h: 0}};
+  case 0: return {a1: $1.a1, a2: Prelude_Types_takeUntil($0, $1.a2())};
+ }
+}
+
+/* Prelude.Types.List.tailRecAppend : List a -> List a -> List a */
+function Prelude_Types_List_tailRecAppend($0, $1) {
+ return Prelude_Types_List_reverseOnto($1, Prelude_Types_List_reverse($0));
+}
+
+/* Prelude.Types.List.reverse : List a -> List a */
+function Prelude_Types_List_reverse($0) {
+ return Prelude_Types_List_reverseOnto({h: 0}, $0);
+}
+
+/* Prelude.Types.prim__integerToNat : Integer -> Nat */
+function Prelude_Types_prim__integerToNat($0) {
+ switch(((0n<=$0)?1:0)) {
+  case 0: return 0n;
+  default: return $0;
+ }
+}
+
+/* Prelude.Types.listBind : List a -> (a -> List b) -> List b */
+function Prelude_Types_listBind($0, $1) {
+ return Prelude_Types_listBindOnto($1, {h: 0}, $0);
+}
+
+/* Prelude.Types.countFrom : n -> (n -> n) -> Stream n */
+function Prelude_Types_countFrom($0, $1) {
+ return {a1: $0, a2: () => Prelude_Types_countFrom($1($0), $1)};
+}
+
+/* Prelude.EqOrd.compare */
+function Prelude_EqOrd_compare_Ord_Integer($0, $1) {
+ switch(Prelude_EqOrd_x3c_Ord_Integer($0, $1)) {
+  case 1: return 0;
+  case 0: {
+   switch(Prelude_EqOrd_x3dx3d_Eq_Integer($0, $1)) {
+    case 1: return 1;
+    case 0: return 2;
+   }
+  }
+ }
+}
+
+/* Prelude.EqOrd.== */
+function Prelude_EqOrd_x3dx3d_Eq_Ordering($0, $1) {
+ switch($0) {
+  case 0: {
+   switch($1) {
+    case 0: return 1;
+    default: return 0;
+   }
+  }
+  case 1: {
+   switch($1) {
+    case 1: return 1;
+    default: return 0;
+   }
+  }
+  case 2: {
+   switch($1) {
+    case 2: return 1;
+    default: return 0;
+   }
+  }
+  default: return 0;
+ }
+}
+
+/* Prelude.EqOrd.== */
+function Prelude_EqOrd_x3dx3d_Eq_Integer($0, $1) {
+ switch((($0===$1)?1:0)) {
+  case 0: return 0;
+  default: return 1;
+ }
+}
+
+/* Prelude.EqOrd.== */
+function Prelude_EqOrd_x3dx3d_Eq_Char($0, $1) {
+ switch((($0===$1)?1:0)) {
+  case 0: return 0;
+  default: return 1;
+ }
+}
+
+/* Prelude.EqOrd.== */
+function Prelude_EqOrd_x3dx3d_Eq_Bool($0, $1) {
+ switch($0) {
+  case 1: {
+   switch($1) {
+    case 1: return 1;
+    default: return 0;
+   }
+  }
+  case 0: {
+   switch($1) {
+    case 0: return 1;
+    default: return 0;
+   }
+  }
+  default: return 0;
+ }
+}
+
+/* Prelude.EqOrd.< */
+function Prelude_EqOrd_x3c_Ord_Integer($0, $1) {
+ switch((($0<$1)?1:0)) {
+  case 0: return 0;
+  default: return 1;
+ }
+}
+
+/* Prelude.EqOrd./= */
+function Prelude_EqOrd_x2fx3d_Eq_Ordering($0, $1) {
+ switch(Prelude_EqOrd_x3dx3d_Eq_Ordering($0, $1)) {
+  case 1: return 0;
+  case 0: return 1;
+ }
+}
+
+/* Prelude.EqOrd.compareInteger : Integer -> Integer -> Ordering */
+function Prelude_EqOrd_compareInteger($0, $1) {
+ return Prelude_EqOrd_compare_Ord_Integer($0, $1);
+}
+
+/* Prelude.Interfaces.traverse_ : Applicative f => Foldable t => (a -> f b) -> t a -> f () */
+function Prelude_Interfaces_traverse_($0, $1, $2) {
+ return $1.a1(undefined)(undefined)($b => $c => Prelude_Interfaces_x2ax3e($0, $2($b), $c))($0.a2(undefined)(undefined));
+}
+
+/* Prelude.Interfaces.guard : Alternative f => Bool -> f () */
+function Prelude_Interfaces_guard($0, $1) {
+ switch($1) {
+  case 1: return $0.a1.a2(undefined)(undefined);
+  case 0: return $0.a2(undefined);
+ }
+}
+
+/* Prelude.Interfaces.for_ : Applicative f => Foldable t => t a -> (a -> f b) -> f () */
+function Prelude_Interfaces_for_($0, $1, $2, $3) {
+ return Prelude_Basics_flip($6 => Prelude_Interfaces_traverse_($0, $1, $6), $2, $3);
+}
+
+/* Prelude.Interfaces.(*>) : Applicative f => f a -> f b -> f b */
+function Prelude_Interfaces_x2ax3e($0, $1, $2) {
+ const $d = $0.a1;
+ const $c = $d(undefined)(undefined);
+ const $b = $c($14 => $15 => $15);
+ const $a = $b($1);
+ const $4 = $0.a3(undefined)(undefined)($a);
+ return $4($2);
+}
+
+/* Prelude.Show.show */
+function Prelude_Show_show_Show_Nat($0) {
+ return Prelude_Show_show_Show_Integer($0);
+}
+
+/* Prelude.Show.show */
+function Prelude_Show_show_Show_Integer($0) {
+ return Prelude_Show_showPrec_Show_Integer({h: 0 /* Open */}, $0);
+}
+
+/* Prelude.Show.showPrec */
+function Prelude_Show_showPrec_Show_Integer($0, $1) {
+ return Prelude_Show_primNumShow($4 => (''+$4), $0, $1);
+}
+
+/* Prelude.Show.compare */
+function Prelude_Show_compare_Ord_Prec($0, $1) {
+ switch($0.h) {
+  case 4: /* User */ {
+   switch($1.h) {
+    case 4: /* User */ return Prelude_EqOrd_compare_Ord_Integer($0.a1, $1.a1);
+    default: return Prelude_EqOrd_compare_Ord_Integer(Prelude_Show_precCon($0), Prelude_Show_precCon($1));
+   }
+  }
+  default: return Prelude_EqOrd_compare_Ord_Integer(Prelude_Show_precCon($0), Prelude_Show_precCon($1));
+ }
+}
+
+/* Prelude.Show.>= */
+function Prelude_Show_x3ex3d_Ord_Prec($0, $1) {
+ return Prelude_EqOrd_x2fx3d_Eq_Ordering(Prelude_Show_compare_Ord_Prec($0, $1), 0);
+}
+
+/* Prelude.Show.showParens : Bool -> String -> String */
+function Prelude_Show_showParens($0, $1) {
+ switch($0) {
+  case 0: return $1;
+  case 1: return ('('+($1+')'));
+ }
+}
+
+/* Prelude.Show.primNumShow : (a -> String) -> Prec -> a -> String */
+function Prelude_Show_primNumShow($0, $1, $2) {
+ const $3 = $0($2);
+ let $7;
+ switch(Prelude_Show_x3ex3d_Ord_Prec($1, {h: 5 /* PrefixMinus */})) {
+  case 1: {
+   $7 = Prelude_Show_firstCharIs($e => Prelude_EqOrd_x3dx3d_Eq_Char($e, '-'), $3);
+   break;
+  }
+  case 0: {
+   $7 = 0;
+   break;
+  }
+ }
+ return Prelude_Show_showParens($7, $3);
+}
+
+/* Prelude.Show.precCon : Prec -> Integer */
+function Prelude_Show_precCon($0) {
+ switch($0.h) {
+  case 0: /* Open */ return 0n;
+  case 1: /* Equal */ return 1n;
+  case 2: /* Dollar */ return 2n;
+  case 3: /* Backtick */ return 3n;
+  case 4: /* User */ return 4n;
+  case 5: /* PrefixMinus */ return 5n;
+  case 6: /* App */ return 6n;
+ }
+}
+
+/* Prelude.Show.firstCharIs : (Char -> Bool) -> String -> Bool */
+function Prelude_Show_firstCharIs($0, $1) {
+ switch($1) {
+  case '': return 0;
+  default: return $0(($1.charAt(0)));
+ }
+}
+
+/* Prelude.IO.map */
+function Prelude_IO_map_Functor_IO($0, $1, $2) {
+ const $3 = $1($2);
+ return $0($3);
+}
+
+/* PrimIO.unsafePerformIO : IO a -> a */
+function PrimIO_unsafePerformIO($0) {
+ return PrimIO_unsafeCreateWorld(w => $0(w));
+}
+
+/* PrimIO.unsafeCreateWorld : (1 _ : ((1 _ : %World) -> a)) -> a */
+function PrimIO_unsafeCreateWorld($0) {
+ return $0(_idrisworld);
+}
+
+/* Data.Nat.succNotLTEzero : Not (LTE (S m) 0) */
+function Data_Nat_succNotLTEzero($0) {
+ _crashExp('No clauses in Data.Nat.succNotLTEzero');
+}
+
+/* Data.Nat.isLTE : (m : Nat) -> (n : Nat) -> Dec (LTE m n) */
+function Data_Nat_isLTE($0, $1) {
+ switch($0) {
+  case 0n: return {h: 0 /* Yes */, a1: 0n};
+  default: {
+   const $4 = ($0-1n);
+   switch($1) {
+    case 0n: return {h: 1 /* No */, a1: $9 => Data_Nat_succNotLTEzero($9)};
+    default: {
+     const $c = ($1-1n);
+     const $f = Data_Nat_isLTE($4, $c);
+     switch($f.h) {
+      case 1: /* No */ return {h: 1 /* No */, a1: $14 => $f.a1(Data_Nat_fromLteSucc($14))};
+      case 0: /* Yes */ return {h: 0 /* Yes */, a1: ($f.a1+1n)};
+     }
+    }
+   }
+  }
+ }
+}
+
+/* Data.Nat.isLT : (m : Nat) -> (n : Nat) -> Dec (LT m n) */
+function Data_Nat_isLT($0, $1) {
+ return Data_Nat_isLTE(($0+1n), $1);
+}
+
+/* Data.Nat.fromLteSucc : LTE (S m) (S n) -> LTE m n */
+function Data_Nat_fromLteSucc($0) {
+ switch($0) {
+  case 0n: _crashExp('Nat case not covered');
+  default: return ($0-1n);
+ }
+}
+
+/* Penultimate.Core.== */
+function Penultimate_Core_x3dx3d_Eq_StyledChar($0, $1) {
+ switch(Prelude_EqOrd_x3dx3d_Eq_Char($0.a1, $1.a1)) {
+  case 1: {
+   switch(Penultimate_Core_x3dx3d_Eq_Color($0.a2, $1.a2)) {
+    case 1: {
+     switch(Penultimate_Core_x3dx3d_Eq_Color($0.a3, $1.a3)) {
+      case 1: return Penultimate_Core_x3dx3d_Eq_Attr($0.a4, $1.a4);
+      case 0: return 0;
+     }
+    }
+    case 0: return 0;
+   }
+  }
+  case 0: return 0;
+ }
+}
+
+/* Penultimate.Core.== */
+function Penultimate_Core_x3dx3d_Eq_Color($0, $1) {
+ switch($0.h) {
+  case 0: /* Named */ {
+   switch($1.h) {
+    case 0: /* Named */ return (($0.a1===$1.a1)?1:0);
+    default: return 0;
+   }
+  }
+  case 1: /* RGB */ {
+   switch($1.h) {
+    case 1: /* RGB */ {
+     switch((($0.a1===$1.a1)?1:0)) {
+      case 1: {
+       switch((($0.a2===$1.a2)?1:0)) {
+        case 1: return (($0.a3===$1.a3)?1:0);
+        case 0: return 0;
+       }
+      }
+      case 0: return 0;
+     }
+    }
+    default: return 0;
+   }
+  }
+  default: return 0;
+ }
+}
+
+/* Penultimate.Core.== */
+function Penultimate_Core_x3dx3d_Eq_Attr($0, $1) {
+ switch(Prelude_EqOrd_x3dx3d_Eq_Bool($0.a1, $1.a1)) {
+  case 1: {
+   switch(Prelude_EqOrd_x3dx3d_Eq_Bool($0.a2, $1.a2)) {
+    case 1: return Prelude_EqOrd_x3dx3d_Eq_Bool($0.a3, $1.a3);
+    case 0: return 0;
+   }
+  }
+  case 0: return 0;
+ }
+}
+
+/* Penultimate.Core.defaultStyledChar : StyledChar */
+const Penultimate_Core_defaultStyledChar = __lazy(function () {
+ return {a1: ' ', a2: {h: 0 /* Named */, a1: 7n}, a3: {h: 0 /* Named */, a1: 0n}, a4: Penultimate_Core_defaultAttr()};
+});
+
+/* Penultimate.Core.defaultAttr : Attr */
+const Penultimate_Core_defaultAttr = __lazy(function () {
+ return {a1: 0, a2: 0, a3: 0};
+});
+
+/* Data.Vect.updateAt : Fin len -> (elem -> elem) -> Vect len elem -> Vect len elem */
+function Data_Vect_updateAt($0, $1, $2) {
+ switch($0) {
+  case 0n: return {a1: $1($2.a1), a2: $2.a2};
+  default: {
+   const $9 = ($0-1n);
+   return {a1: $2.a1, a2: Data_Vect_updateAt($9, $1, $2.a2)};
+  }
+ }
+}
+
+/* Data.Vect.replicate : (len : Nat) -> elem -> Vect len elem */
+function Data_Vect_replicate($0, $1) {
+ switch($0) {
+  case 0n: return {h: 0};
+  default: {
+   const $3 = ($0-1n);
+   return {a1: $1, a2: Data_Vect_replicate($3, $1)};
+  }
+ }
+}
+
+
+try{__mainExpression_0()}catch(e){if(e instanceof IdrisError){console.log('ERROR: ' + e.message)}else{throw e} }
