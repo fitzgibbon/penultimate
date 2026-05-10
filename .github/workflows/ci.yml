@@ -33,9 +33,12 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-    - uses: actions/checkout@v4
     - uses: actions/download-artifact@v4
       with:
         name: web-example
@@ -43,11 +46,15 @@ jobs:
     - name: Create index.html
       run: |
         echo '<!DOCTYPE html><html><head><title>Penultimate Web</title></head><body><div id="penultimate-root"></div><script src="webjs"></script></body></html>' > web-example/index.html
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./web-example
+        path: './web-example'
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
 
   pr-comment:
     needs: build-and-test
